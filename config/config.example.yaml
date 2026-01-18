@@ -1,0 +1,3 @@
+server:
+  base_url: "http://localhost"
+  base_port: 8080
