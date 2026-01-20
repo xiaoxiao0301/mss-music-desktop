@@ -26,9 +26,10 @@ func main() {
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title:  "mss-music-desktop",
-		Width:  1024,
-		Height: 768,
+		Title:     "沐音",
+		Width:     1024,
+		Height:    768,
+		Frameless: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局背景 + 字体 */
+body {
+  @apply bg-warm-bg text-warm-text font-sans;
+}
+
+/* 滚动条暖色系 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #E67E22;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #F5CBA7;
+}
+
+/* 卡片基础样式 */
+.card {
+  @apply bg-warm-card shadow-warm rounded-xl p-4;
+}
+
+/* 主按钮 */
+.btn-primary {
+  @apply px-4 py-2 bg-warm-primary text-white rounded-lg shadow-warm active:scale-95 transition;
+}
+
+/* 次按钮 */
+.btn-secondary {
+  @apply px-4 py-2 bg-warm-secondary text-warm-text rounded-lg shadow-sm active:scale-95 transition;
+}
+
+/* 标题 */
+.title {
+  @apply text-xl font-bold text-warm-text mb-3;
+}
+
+/* 小标题 */
+.subtitle {
+  @apply text-lg font-bold text-warm-text mb-2;
+}
+
+/* 列表项 */
+.list-item {
+  @apply flex items-center justify-between py-3 border-b border-warm-secondary/40;
+}

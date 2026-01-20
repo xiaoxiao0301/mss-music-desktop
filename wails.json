@@ -1,13 +1,18 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "mss-music-desktop",
-  "outputfilename": "mss-music-desktop",
+  "name": "沐音",
+  "outputfilename": "沐音音乐",
+  "frontend:dir": "./frontend",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "info": {
+    "productName": "沐音音乐",
+    "productVersion": "1.0.0"
+  },
   "author": {
-    "name": "Ji, Andy",
-    "email": "Andy.Ji@activenetwork.com"
+    "name": "xiaoxiao0301",
+    "email": "jixiao35@qq.com"
   }
 }
