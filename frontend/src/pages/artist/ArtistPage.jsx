@@ -2,10 +2,11 @@ import { useState } from "react";
 import SlidePage from "../../components/SlidePage";
 import ArtistDetailPage from "./ArtistDetailPage";
 import { mockArtists, artistRegions, artistTypes } from "../../mock/artist";
+import { useFavorite } from "../../context/MusicContext";
 
 export default function ArtistPage() {
   const [currentArtistId, setCurrentArtistId] = useState(null);
-
+  const { isFavoriteArtist } = useFavorite();
   // 筛选条件
   const [region, setRegion] = useState("全部");
   const [type, setType] = useState("全部");
@@ -67,6 +68,9 @@ export default function ArtistPage() {
             >
               <img src={artist.avatar} className="w-24 h-24 rounded-full object-cover shadow mb-3" />
               <p className="font-bold text-center">{artist.name}</p>
+              {isFavoriteArtist(artist.id) && (
+                <p className="text-red-500 text-sm mt-1">❤️ 已收藏</p>
+              )}
             </div>
           ))}
         </div>

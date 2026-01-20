@@ -122,20 +122,36 @@ export const mockPlaylists = [
 export const mockSongs = [
   {
     id: 1,
+    playlistId: 1,
     name: "夜曲",
-    artist: "周杰伦",
-    duration: "04:55"
+    duration: "03:45",
+    artist: "歌手 A",
+    cover: "https://picsum.photos/200?1"
   },
   {
     id: 2,
+    playlistId: 1,
     name: "晴天",
-    artist: "周杰伦",
-    duration: "04:29"
+    duration: "04:12",
+    artist: "歌手 B",
+    cover: "https://picsum.photos/200?2"
   },
   {
     id: 3,
-    name: "Love Story",
-    artist: "Taylor Swift",
-    duration: "03:55"
+    playlistId: 2,
+    name: "稻香",
+    duration: "04:55",
+    artist: "民谣歌手",
+    cover: "https://picsum.photos/200?3"
+  },
+  {
+    id: 4,
+    playlistId: 2,
+    name: "孤勇者",
+    duration: "04:55",
+    artist: "民谣歌手",
+    cover: "https://picsum.photos/200?4"
   }
 ];
+
+

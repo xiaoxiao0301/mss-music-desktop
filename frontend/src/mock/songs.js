@@ -1,25 +1,10 @@
-export const currentTrack = {
-  id: 1,
-  name: "夜曲",
-  artist: "周杰伦",
-  cover: "https://picsum.photos/200?track",
-  duration: 270,
-};
-
-export const playQueue = [
-  { id: 1, playlistId: 1, name: "夜曲", artist: "周杰伦" },
-  { id: 2, playlistId: 1, name: "晴天", artist: "周杰伦" },
-  { id: 3, playlistId: 2, name: "稻香", artist: "周杰伦" },
-  { id: 4, playlistId: 2, name: "孤勇者", artist: "陈奕迅" },
-];
-
 export const mockTracks = [
   {
     id: 1,
     name: "测试歌曲 A",
     artist: "歌手 A",
     cover: "https://picsum.photos/200?1",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    url: "/audio/test1.mp3",
     lyrics: [
       { time: 0, text: "第一句歌词" },
       { time: 5, text: "第二句歌词" },
@@ -32,7 +17,7 @@ export const mockTracks = [
     name: "测试歌曲 B",
     artist: "歌手 B",
     cover: "https://picsum.photos/200?2",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    url: "/audio/test2.mp3",
     lyrics: [
       { time: 0, text: "开头歌词" },
       { time: 6, text: "继续歌词" },
@@ -40,5 +25,3 @@ export const mockTracks = [
     ]
   }
 ];
-
-

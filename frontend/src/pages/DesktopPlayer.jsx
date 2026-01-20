@@ -1,22 +1,69 @@
-import { useState } from "react";
-import { currentTrack, playQueue } from "../mock/player";
+import { useState, useRef, useEffect } from "react";
+
 import SiderbarPage from "./SidebarPage.jsx";
-import TitleBar from "./TitleBar.jsx";
+import DiscoverPage from "./DiscoverPage.jsx";
 import ArtistPage from "./artist/ArtistPage.jsx";
 import PlaylistCategoryPage from "./playlist/PlaylistCategoryPage.jsx";
 import RankPage from "./rank/RankPage.jsx";
 import RadioPage from "./radio/RadioPage.jsx";
+import LikedPage from "./liked/LikedPage.jsx";
+import PlayerBar from "../components/PlayerBar.jsx";
+import LyricsFullScreen from "../components/LyricsFullScreen.jsx";
+
+import { mockTracks } from "../mock/player";
+import FavoritePlaylistsPage from "./liked/FavoritePlaylistsPage.jsx";
+import FavoriteArtistsPage from "./liked/FavoriteArtistsPage.jsx";
+import RecentPlaysPage from "./recent/RecentPlaysPage.jsx";
 
 export default function DesktopPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState("discover");
 
+  const [trackIndex, setTrackIndex] = useState(0); 
+  const [currentTrack, setCurrentTrack] = useState(mockTracks[0]); 
+  const [currentTime, setCurrentTime] = useState(0); 
+  const [duration, setDuration] = useState(0); 
+  const [volume, setVolume] = useState(70); 
+  const [showLyrics, setShowLyrics] = useState(false); 
+  const audioRef = useRef(new Audio(currentTrack.url)); 
+
+  useEffect(() => { 
+    const audio = audioRef.current; 
+    audio.src = currentTrack.url; 
+    audio.volume = volume / 100; 
+    audio.onloadedmetadata = () => setDuration(audio.duration); 
+    audio.ontimeupdate = () => setCurrentTime(audio.currentTime); 
+    if (isPlaying) audio.play(); 
+  }, [currentTrack]); 
+
+  const togglePlay = () => { 
+    const audio = audioRef.current; 
+    if (isPlaying) audio.pause(); else audio.play(); 
+    setIsPlaying(!isPlaying); 
+  }; 
+
+  const playNext = () => { 
+    const next = (trackIndex + 1) % mockTracks.length; 
+    setTrackIndex(next); 
+    setCurrentTrack(mockTracks[next]); 
+  }; 
+
+  const playPrev = () => { 
+    const prev = (trackIndex - 1 + mockTracks.length) % mockTracks.length; 
+    setTrackIndex(prev); setCurrentTrack(mockTracks[prev]); 
+  }; 
+
+  const seekTo = (value) => { 
+    audioRef.current.currentTime = value; 
+    setCurrentTime(value); 
+  }; 
+  
+  const formatTime = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
   return (
     <div className="w-screen h-screen bg-warm-bg text-warm-text flex flex-col overflow-hidden">
 
-      <TitleBar />  
+      {/* <TitleBar />   */}
 
       {/* 上方主区域：左侧导航 + 中间内容 */}
       <div className="flex flex-1 overflow-hidden">
@@ -33,66 +80,37 @@ export default function DesktopPlayer() {
             {currentPage === "artist" && <ArtistPage />}
             {currentPage === "rank" && <RankPage />}
             {currentPage === "radio" && <RadioPage />}
-            {currentPage === "my" && <MyMusicPage />}
-            {currentPage === "local" && <LocalPage />}
-            {currentPage === "settings" && <SettingsPage />}
+            {currentPage === "fav" && <LikedPage />}
+            {currentPage === "fav-playlist" && <FavoritePlaylistsPage />}
+            {currentPage === "fav-artist" && <FavoriteArtistsPage />}
+            {currentPage === "recent" && <RecentPlaysPage />}
         </main>
 
       </div>
 
       {/* 底部播放器条 */}
-      <footer className="h-24 flex-shrink-0 bg-warm-card shadow-[0_-4px_10px_rgba(0,0,0,0.05)] px-4 flex items-center justify-between">
+      <PlayerBar
+        currentTrack={currentTrack}
+        isPlaying={isPlaying}
+        togglePlay={togglePlay}
+        playNext={playNext}
+        playPrev={playPrev}
+        currentTime={currentTime}
+        duration={duration}
+        seekTo={seekTo}
+        volume={volume}
+        setVolume={setVolume}
+        setShowLyrics={setShowLyrics}
+        formatTime={formatTime}
+      />
 
-        {/* 左侧：当前歌曲信息 */}
-        <div className="flex items-center gap-3 w-1/4">
-          <img
-            src={currentTrack.cover}
-            className="w-14 h-14 rounded-lg object-cover"
-          />
-          <div>
-            <p className="font-medium text-sm">{currentTrack.name}</p>
-            <p className="text-xs text-warm-subtext">{currentTrack.artist}</p>
-          </div>
-        </div>
-
-        {/* 中间：播放控制 + 进度条 */}
-        <div className="flex flex-col items-center w-2/4">
-          <div className="flex items-center gap-6 mb-2">
-            <button className="text-xl">⏮</button>
-            <button
-              className="text-3xl"
-              onClick={() => setIsPlaying(!isPlaying)}
-            >
-              {isPlaying ? "⏸" : "▶️"}
-            </button>
-            <button className="text-xl">⏭</button>
-          </div>
-
-          <div className="flex items-center gap-2 w-full">
-            <span className="text-xs text-warm-subtext">0:00</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={progress}
-              onChange={(e) => setProgress(e.target.value)}
-              className="w-full"
-            />
-            <span className="text-xs text-warm-subtext">4:30</span>
-          </div>
-        </div>
-
-        {/* 右侧：音量等控制 */}
-        <div className="flex items-center justify-end gap-3 w-1/4">
-          <span className="text-lg">🔊</span>
-          <input type="range" min="0" max="100" defaultValue="70" />
-        </div>
-      </footer>
+      {showLyrics && (
+        <LyricsFullScreen
+          currentTrack={currentTrack}
+          currentTime={currentTime}
+          onClose={() => setShowLyrics(false)}
+        />
+      )}
     </div>
   );
 }
-
-function DiscoverPage() { return <div>发现音乐页面</div>; }
-function MyMusicPage() { return <div>我的音乐</div>; }
-function LocalPage() { return <div>本地音乐</div>; }
-function SettingsPage() { return <div>设置页面</div>; }

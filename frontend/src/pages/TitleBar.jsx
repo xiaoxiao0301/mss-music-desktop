@@ -79,7 +79,7 @@ export default function TitleBar() {
             </button>
           </div>
           <div className="text-sm font-medium text-warm-text select-none">
-            mss-music-desktop
+            沐音
           </div>
           <div className="w-[60px]"></div>
         </>
@@ -88,7 +88,7 @@ export default function TitleBar() {
         <>
           <div className="w-[60px]"></div>
           <div className="text-sm font-medium text-warm-text select-none">
-            mss-music-desktop
+            沐音
           </div>
           <div
             className="flex items-center gap-1"
