@@ -6,12 +6,13 @@ import {
   mockMVs,
 } from "../../mock/artistDetail";
 import TopNavBar from "../../components/TopNavBar";
-import { useFavorite } from "../../context/MusicContext";
+import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 
 export default function ArtistDetailPage({ artistId, onBack }) {
   const artist = mockArtistDetail[artistId] || mockArtistDetail[1];
   const [tab, setTab] = useState("songs");
   const { isFavoriteArtist, toggleFavoriteArtist } = useFavorite();
+  const { playTrack } = useMusicPlayer();
 
   return (
     <div className="flex-1 overflow-auto p-4">
@@ -37,7 +38,12 @@ export default function ArtistDetailPage({ artistId, onBack }) {
           <p className="text-warm-subtext max-w-xl">{mockArtistDetail.desc}</p>
 
           <div className="flex gap-3 mt-4">
-            <button className="btn-primary">播放热门歌曲</button>
+            <button 
+              className="btn-primary"
+              onClick={() => playTrack(mockHotSongs[0], mockHotSongs)}
+            >
+              播放热门歌曲
+            </button>
             <button className="btn-secondary">关注歌手</button>
             <button onClick={() => toggleFavoriteArtist(mockArtistDetail)}
               className={`px-4 py-2 rounded-lg text-sm ${
@@ -61,7 +67,7 @@ export default function ArtistDetailPage({ artistId, onBack }) {
       </div>
 
       {/* 内容区 */}
-      {tab === "songs" && <HotSongs />}
+      {tab === "songs" && <HotSongs playTrack={playTrack} />}
       {tab === "albums" && <Albums />}
       {tab === "mvs" && <MVs />}
       {tab === "intro" && <Intro />}
@@ -89,11 +95,15 @@ function TabButton({ label, value, tab, setTab }) {
 
 /* ---------------- 热门歌曲 ---------------- */
 
-function HotSongs() {
+function HotSongs({ playTrack }) {
   return (
     <div className="card">
       {mockHotSongs.map((song) => (
-        <div key={song.id} className="list-item">
+        <div 
+          key={song.id} 
+          className="list-item cursor-pointer hover:bg-warm-secondary/20"
+          onClick={() => playTrack(song, mockHotSongs)}
+        >
           <span className="font-medium">{song.name}</span>
           <span className="text-sm text-warm-subtext">{song.duration}</span>
         </div>

@@ -7,9 +7,30 @@ export const mockArtistDetail = {
 };
 
 export const mockHotSongs = [
-  { id: 1, name: "夜曲", duration: "04:30" },
-  { id: 2, name: "青花瓷", duration: "03:55" },
-  { id: 3, name: "晴天", duration: "04:50" },
+  { 
+    id: 1, 
+    name: "夜曲", 
+    duration: "04:30",
+    artist: "周杰伦",
+    cover: "https://picsum.photos/200?song1",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+  },
+  { 
+    id: 2, 
+    name: "青花瓷", 
+    duration: "03:55",
+    artist: "周杰伦",
+    cover: "https://picsum.photos/200?song2",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+  },
+  { 
+    id: 3, 
+    name: "晴天", 
+    duration: "04:50",
+    artist: "周杰伦",
+    cover: "https://picsum.photos/200?song3",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+  },
 ];
 
 export const mockAlbums = [

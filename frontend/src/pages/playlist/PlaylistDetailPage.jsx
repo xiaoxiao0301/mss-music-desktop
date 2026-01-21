@@ -1,11 +1,12 @@
 import { mockPlaylists, mockSongs } from "../../mock/playlists";
 import TopNavBar from "../../components/TopNavBar";
-import { useFavorite } from "../../context/MusicContext";
+import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 
 export default function PlaylistDetailPage({ playlistId, onBack }) {
   const playlist = mockPlaylists.find((p) => p.id === playlistId) || mockPlaylists[0];
   const songs = mockSongs.filter(s => s.playlistId === playlist.id);
   const { isLiked, toggleLike, isFavoritePlaylist, toggleFavoritePlaylist } = useFavorite();
+  const { playTrack } = useMusicPlayer();
 
   return (
     <div>
@@ -40,11 +41,18 @@ export default function PlaylistDetailPage({ playlistId, onBack }) {
 
       <div className="card">
         {songs.map((song) => (
-          <div key={song.id} className="list-item">
+          <div 
+            key={song.id} 
+            className="list-item cursor-pointer hover:bg-warm-secondary/20"
+            onClick={() => playTrack(song, songs)}
+          >
             <span>{song.name}</span>
             <span className="text-sm text-warm-subtext">{song.duration}</span>
             <button
-              onClick={() => toggleLike(song)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLike(song);
+              }}
               className={`text-xl ${isLiked(song.id) ? "text-red-500" : "text-gray-400"}`}
               aria-label={isLiked(song.id) ? "取消喜欢" : "喜欢"}
             >

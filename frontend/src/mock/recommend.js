@@ -3,19 +3,25 @@ export const mockRecommendSongs = [
     id: 1,
     name: "夜曲",
     artist: "周杰伦",
-    cover: "https://picsum.photos/400?jay"
+    cover: "https://picsum.photos/400?jay",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    duration: 240
   },
   {
     id: 2,
     name: "Love Story",
     artist: "Taylor Swift",
-    cover: "https://picsum.photos/400?taylor"
+    cover: "https://picsum.photos/400?taylor",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    duration: 233
   },
   {
     id: 3,
     name: "江南",
     artist: "林俊杰",
-    cover: "https://picsum.photos/400?jj"
+    cover: "https://picsum.photos/400?jj",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    duration: 276
   }
 ];
 

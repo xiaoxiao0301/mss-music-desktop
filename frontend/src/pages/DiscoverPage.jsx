@@ -1,6 +1,9 @@
 import { mockRecommendSongs, mockRecommendPlaylists, mockRecommendArtists } from "../mock/recommend";
+import { useMusicPlayer } from "../context/MusicContext";
 
 export default function DiscoverPage() {
+  const { playTrack } = useMusicPlayer();
+
   return (
     <div className="flex flex-col gap-6">
 
@@ -9,7 +12,11 @@ export default function DiscoverPage() {
         <h2 className="text-xl font-bold mb-3">每日推荐</h2>
         <div className="grid grid-cols-5 gap-4">
           {mockRecommendSongs.map(song => (
-            <div key={song.id} className="card p-3 hover:bg-warm-secondary/40 transition rounded-xl cursor-pointer">
+            <div 
+              key={song.id} 
+              className="card p-3 hover:bg-warm-secondary/40 transition rounded-xl cursor-pointer"
+              onClick={() => playTrack(song, mockRecommendSongs)}
+            >
               <img src={song.cover} className="w-full h-40 object-cover rounded-lg shadow" />
               <p className="mt-2 font-bold">{song.name}</p>
               <p className="text-sm text-warm-subtext">{song.artist}</p>

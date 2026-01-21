@@ -1,7 +1,8 @@
-import { useFavorite } from "../../context/MusicContext";
+import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 
 export default function LikedPage() {
   const { likedSongs, toggleLike } = useFavorite();
+  const { playTrack } = useMusicPlayer();
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -13,6 +14,7 @@ export default function LikedPage() {
           <div
             key={song.id}
             className="card p-3 flex items-center gap-4 hover:bg-warm-secondary/40 transition rounded-xl cursor-pointer"
+            onClick={() => playTrack(song, likedSongs)}
           >
             <img
               src={song.cover}
@@ -24,7 +26,10 @@ export default function LikedPage() {
               <p className="text-sm text-warm-subtext">{song.artist}</p>
             </div>
 
-            <button onClick={() => toggleLike(song)}
+            <button onClick={(e) => {
+              e.stopPropagation();
+              toggleLike(song);
+            }}
                 className="text-xl text-red-500 hover:scale-110 transition"
             >
                 ❤️

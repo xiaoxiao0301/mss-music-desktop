@@ -3,18 +3,20 @@ import LoginPage from "./pages/LoginPage.jsx"
 import HomePage from "./pages/DesktopPlayer.jsx"
 
 import './App.css'
-import { FavoriteProvider } from "./context/MusicContext.jsx"
+import { FavoriteProvider, MusicPlayerProvider } from "./context/MusicContext.jsx"
 
 export default function App() {
   return (
     <FavoriteProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* <Route path="/" element={<LoginPage />} /> */}
-          {/* <Route path="/home" element={<HomePage />} /> */}
-          <Route path="/" element={<HomePage />} />
-        </Routes>
-      </BrowserRouter>
+      <MusicPlayerProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* <Route path="/" element={<LoginPage />} /> */}
+            {/* <Route path="/home" element={<HomePage />} /> */}
+            <Route path="/" element={<HomePage />} />
+          </Routes>
+        </BrowserRouter>
+      </MusicPlayerProvider>
     </FavoriteProvider>
     
   )

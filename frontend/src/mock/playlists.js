@@ -126,7 +126,8 @@ export const mockSongs = [
     name: "夜曲",
     duration: "03:45",
     artist: "歌手 A",
-    cover: "https://picsum.photos/200?1"
+    cover: "https://picsum.photos/200?1",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
   },
   {
     id: 2,
@@ -134,7 +135,8 @@ export const mockSongs = [
     name: "晴天",
     duration: "04:12",
     artist: "歌手 B",
-    cover: "https://picsum.photos/200?2"
+    cover: "https://picsum.photos/200?2",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
   },
   {
     id: 3,
@@ -142,7 +144,8 @@ export const mockSongs = [
     name: "稻香",
     duration: "04:55",
     artist: "民谣歌手",
-    cover: "https://picsum.photos/200?3"
+    cover: "https://picsum.photos/200?3",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
   },
   {
     id: 4,
@@ -150,7 +153,8 @@ export const mockSongs = [
     name: "孤勇者",
     duration: "04:55",
     artist: "民谣歌手",
-    cover: "https://picsum.photos/200?4"
+    cover: "https://picsum.photos/200?4",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
   }
 ];
 
