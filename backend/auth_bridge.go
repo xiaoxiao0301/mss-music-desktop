@@ -2,8 +2,7 @@ package backend
 
 import (
 	"encoding/json"
-	"fmt"
-	"mss-music-desktop/config"
+	"log"
 )
 
 type AuthBridge struct {
@@ -12,15 +11,16 @@ type AuthBridge struct {
 }
 
 type LoginResponse struct {
-    Token        string `json:"token"`
-    RefreshToken string `json:"refresh_token"`
+    Code    int    `json:"code"`
+    Message string `json:"message"`
+    Data    struct {
+        AccessToken  string `json:"access_token"`
+        RefreshToken string `json:"refresh_token"`
+    } `json:"data"`
 }
 
-func NewAuthBridge(cfg *config.Config) *AuthBridge {
-    store := NewKeyringTokenStore()
-    fullURL := fmt.Sprintf("%s:%d", cfg.Server.BaseURL, cfg.Server.BasePort)
-    api := NewAPIClient(fullURL, store)
 
+func NewAuthBridge(api *APIClient, store *KeyringTokenStore) *AuthBridge {
     return &AuthBridge{
         tokenStore: store,
         api: api,
@@ -29,9 +29,10 @@ func NewAuthBridge(cfg *config.Config) *AuthBridge {
 
 // 发送验证码
 func (a *AuthBridge) SendOtp(phone string) error {
-    _, err := a.api.Post("/auth/request-otp", map[string]string{
+    _, err := a.api.Post(GetRequestOTPPath(), map[string]string{
         "phone": phone,
     })
+    log.Println(err)
     if err != nil {
         return err
     }
@@ -40,32 +41,34 @@ func (a *AuthBridge) SendOtp(phone string) error {
 
 // 登录（手机号 + 验证码）
 func (a *AuthBridge) Login(phone string, code string) (error) {
-    resp, err := a.api.Post("/auth/verify-otp", map[string]string{
+    resp, err := a.api.Post(GetVerifyOTPPath(), map[string]string{
         "phone": phone,
         "code":  code,
     })
     if err != nil {
         return err
     }
+
     var result LoginResponse
     if err := json.Unmarshal(resp, &result); err != nil {
         return err
     }
-    a.tokenStore.Save(result.Token, result.RefreshToken)
-    return nil
-}
 
-func (a *AuthBridge) GetTokens() (*LoginResponse, error) {
-    token, refreshToken, err := a.tokenStore.Load()
-    if err != nil {
-        return nil, err
-    }
-    return &LoginResponse{
-        Token:        token,
-        RefreshToken: refreshToken,
-    }, nil
+    a.tokenStore.Save(result.Data.AccessToken, result.Data.RefreshToken)
+    return nil
 }
 
 func (a *AuthBridge) Logout() error {
     return a.tokenStore.Clear()
+}
+
+func (a *AuthBridge) IsLoggedIn() bool {
+    token, refresh, err := a.tokenStore.Load()
+    if err != nil {
+        return false
+    }
+    if token == "" || refresh == "" {
+        return false
+    }
+    return true
 }

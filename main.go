@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
+	"log"
 	"mss-music-desktop/backend"
 	"mss-music-desktop/config"
 
@@ -20,9 +22,25 @@ func main() {
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		panic("Failed to load config: " + err.Error())
+		log.Println("Failed to load config:", err)
+		return
 	}
-	authBridge := backend.NewAuthBridge(cfg)
+	// use KeyChain instead of file storage
+	// deviceId, err := backend.GetDeviceID()
+	// if err != nil {
+	// 	panic("Failed to get device ID: " + err.Error())
+	// }
+	
+	tokenStore := backend.NewKeyringTokenStore()
+	deviceID, err := tokenStore.GetDeviceID()
+	if err != nil {
+		log.Println("Failed to load deviceID:", err)
+		return
+	}
+	baseURL := fmt.Sprintf("%s:%d", cfg.Server.BaseURL, cfg.Server.BasePort)
+	apiClient := backend.NewAPIClient(baseURL, tokenStore, deviceID, "desktop")
+	authBridge := backend.NewAuthBridge(apiClient, tokenStore)
+	rankingBridge := backend.NewRankingBridge(apiClient)
 
 	// Create application with options
 	err = wails.Run(&options.App{
@@ -41,6 +59,10 @@ func main() {
 		Bind: []interface{}{
 			app,
 			authBridge,
+			rankingBridge,
+		},
+		Debug: options.Debug{
+			OpenInspectorOnStartup: true,
 		},
 	})
 

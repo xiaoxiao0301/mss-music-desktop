@@ -1,7 +1,7 @@
 .login-wrapper {
   width: 100vw;
   height: 100vh;
-  background: url("src/assets/images/bg.png") center center / cover no-repeat;
+  background: url("../assets/images/bg.png") center center / cover no-repeat;
   position: relative;
   display: flex;
   justify-content: center;
