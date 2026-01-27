@@ -10,6 +10,15 @@ type AuthBridge struct {
     api *APIClient
 }
 
+type AuthMeResponse struct {
+    Code    int    `json:"code"`
+    Message string `json:"message"`
+    Data   struct  {
+        ID    int    `json:"id"`
+        Phone string `json:"phone"`
+    } `json:"data"`
+} 
+
 type LoginResponse struct {
     Code    int    `json:"code"`
     Message string `json:"message"`
@@ -63,12 +72,18 @@ func (a *AuthBridge) Logout() error {
 }
 
 func (a *AuthBridge) IsLoggedIn() bool {
-    token, refresh, err := a.tokenStore.Load()
+    var status bool
+    resp, err := a.api.Get(GetAuthMePath())
     if err != nil {
-        return false
+        status = false
     }
-    if token == "" || refresh == "" {
-        return false
+    var result AuthMeResponse
+    if err := json.Unmarshal(resp, &result); err != nil {
+        status = false
     }
-    return true
+    log.Println(result)
+    if result.Data.ID > 0 { 
+        status = true
+    }
+    return  status
 }

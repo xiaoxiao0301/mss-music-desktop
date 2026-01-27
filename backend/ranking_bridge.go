@@ -16,3 +16,11 @@ func (r *RankingBridge) GetRankingLists() (string, error) {
 	}
 	return string(resp), nil
 }
+
+func (r *RankingBridge) GetRankingDetail(topID, page uint) (string, error) {
+	resp, err := r.api.Get(GetRankingDetailPath(topID, page))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

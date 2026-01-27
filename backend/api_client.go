@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -34,6 +35,15 @@ type RequestOptions struct {
     WithToken  bool
 }
 
+
+type RefreshTokenResponse struct {
+    Code    int    `json:"code"`
+    Message string `json:"message"`
+    Data    struct {
+        AccessToken  string `json:"access_token"`
+        RefreshToken string `json:"refresh_token"`
+    } `json:"data"`
+}
 
 func NewAPIClient(baseURL string, store *KeyringTokenStore, devicedID, platform string) *APIClient {
     return &APIClient{
@@ -122,21 +132,22 @@ func (c *APIClient) refreshAndRetry(method, path string, body any, oldToken, ref
         return nil, errors.New("refresh failed")
     }
 
-    var result struct {
-        AccessToken  string `json:"access_token"`
-        RefreshToken string `json:"refresh_token"`
-    }
+    var result RefreshTokenResponse
     json.NewDecoder(resp.Body).Decode(&result)
 
     // 2. 保存新 token
-    c.tokenStore.Save(result.AccessToken, result.RefreshToken)
+    c.tokenStore.Save(result.Data.AccessToken, result.Data.RefreshToken)
 
     // 3. 重试原请求
     return c.doRequest(method, path, body, opt)
 }
 
 func (c *APIClient) Get(path string) ([]byte, error) {
-    url := path + "?device_id=" + c.deviceID + "&platform=" + c.platform
+    sep := "?"
+    if strings.Contains(path, "?") {
+        sep = "&"
+    }
+    url := path + sep + "device_id=" + c.deviceID + "&platform=" + c.platform
     return c.doRequest("GET", url, nil, RequestOptions{WithToken: true})
 }
 

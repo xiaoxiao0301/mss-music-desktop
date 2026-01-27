@@ -8,6 +8,7 @@ export default function RankPage() {
   const [groups, setGroups] = useState([]);
   const [currentGroupId, setCurrentGroupId] = useState(null);
   const [currentTop, setCurrentTop] = useState(null);
+  const [currentTopId, setCurrentTopId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function RankPage() {
   }, []);
 
   if (loading) {
-    return <div className="p-4">加载中...</div>;
+    return <div className="p-4">网络不给力，加载中...</div>;
   }
 
   const currentGroup = groups.find((g) => g.groupId === currentGroupId);
@@ -105,7 +106,7 @@ export default function RankPage() {
                 {/* 底部：总歌曲数 */}
                 <div className="mt-1 text-[11px] md:text-xs text-warm-subtext flex justify-between items-center">
                   <span>共 {top.totalNum} 首歌曲</span>
-                  <span className="opacity-70">查看全部 &gt;</span>
+                  <span className="opacity-70" onClick={() => {console.log("click:", top.topId); setCurrentTopId(top.topId)}}>查看全部 &gt;</span>
                 </div>
               </div>
             </div>
@@ -116,8 +117,7 @@ export default function RankPage() {
       {/* 详情页 */}
       <SlidePage show={!!currentTop}>
         <RankDetailPage
-          rankName={currentTop?.title}
-          rankData={currentTop}
+          topId={currentTop?.topId}
           onBack={() => setCurrentTop(null)}
         />
       </SlidePage>
