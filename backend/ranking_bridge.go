@@ -1,5 +1,7 @@
 package backend
 
+import "log"
+
 type RankingBridge struct {
 	api *APIClient
 }
@@ -18,6 +20,7 @@ func (r *RankingBridge) GetRankingLists() (string, error) {
 }
 
 func (r *RankingBridge) GetRankingDetail(topID, page uint) (string, error) {
+	log.Println(23, GetRankingDetailPath(topID, page))
 	resp, err := r.api.Get(GetRankingDetailPath(topID, page))
 	if err != nil {
 		return "", err

@@ -50,7 +50,10 @@ export default function App() {
     <FavoriteProvider>
       <MusicPlayerProvider>
         <BrowserRouter>
-          <AppRoutes />
+          <Routes> 
+            <Route path="/" element={<LoginPage />} /> 
+            <Route path="/home" element={<HomePage />} />
+          </Routes> 
         </BrowserRouter>
       </MusicPlayerProvider>
     </FavoriteProvider>

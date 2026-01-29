@@ -1,0 +1,25 @@
+package backend
+
+type ArtistBridge struct {
+	api *APIClient
+}
+
+func NewArtistBridge(api *APIClient) *ArtistBridge {
+	return &ArtistBridge{api: api}
+}
+
+func (a *ArtistBridge) GetArtistTypes() (string, error) {
+	resp, err := a.api.Get(GetArtistTypesPath())
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}
+
+func (a *ArtistBridge) GetArtistListByFilters(page, area, genre, sex, index int) (string, error) {
+	resp, err := a.api.Get(GetArtistFiltersPath(page, area, genre, sex, index))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

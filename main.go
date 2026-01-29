@@ -38,9 +38,11 @@ func main() {
 		return
 	}
 	baseURL := fmt.Sprintf("%s:%d", cfg.Server.BaseURL, cfg.Server.BasePort)
+	log.Println("Base URL:", baseURL)
 	apiClient := backend.NewAPIClient(baseURL, tokenStore, deviceID, "desktop")
 	authBridge := backend.NewAuthBridge(apiClient, tokenStore)
 	rankingBridge := backend.NewRankingBridge(apiClient)
+	artistBridge := backend.NewArtistBridge(apiClient)
 
 	// Create application with options
 	err = wails.Run(&options.App{
@@ -60,6 +62,7 @@ func main() {
 			app,
 			authBridge,
 			rankingBridge,
+			artistBridge,
 		},
 		Debug: options.Debug{
 			OpenInspectorOnStartup: true,

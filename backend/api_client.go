@@ -77,7 +77,7 @@ func (c *APIClient) doRequest(method, path string, body any, opt RequestOptions)
         b, _ := json.Marshal(body)
         reqBody = bytes.NewBuffer(b)
     }
-
+    log.Println("url:" + c.baseURL + path)
     req, _ := http.NewRequest(method, c.baseURL+path, reqBody)
     req.Header.Set("Content-Type", "application/json")
     if opt.WithToken {

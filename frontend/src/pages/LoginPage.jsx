@@ -58,8 +58,27 @@ export default function LoginPage() {
       message.success("验证码已发送")
       setCooldown(60)
     } catch (err) {
-      message.error("发送验证码失败")
+      const msg = String(err)
+
+      // 提取 JSON 部分
+      const jsonStart = msg.indexOf("{")
+      const jsonStr = msg.slice(jsonStart)
+
+      let errResp = {}
+      try {
+        errResp = JSON.parse(jsonStr)
+      } catch (e) {
+        console.error("解析错误信息失败:", msg)
+        message.error("短信发送失败")
+      }
+
+      if (errResp.code === 42900) {
+        message.error("5分钟后再尝试")
+      } else {
+        message.error("发送验证码失败")
+      }
     }
+
   }
 
   // 登录

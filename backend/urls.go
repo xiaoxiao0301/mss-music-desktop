@@ -12,6 +12,9 @@ const (
 
 	rankingListPath = "/ranking/list"
 	rankingDetailPath = "/ranking/detail"
+
+	artistTypesPath = "/artist/types"
+	artistFiltersPath = "/artist/list"
 )
 
 func GetRequestOTPPath() string {
@@ -35,6 +38,13 @@ func GetRankingListPath() string {
 }
 
 func GetRankingDetailPath(topID, page uint) string {
-	return fmt.Sprintf("%s%s?top_id=%d&page=%d", apiBasePath, rankingDetailPath, topID, page)
+	return fmt.Sprintf("%s%s?top_id=%d&page=%d&period=%s", apiBasePath, rankingDetailPath, topID, page)
 }
 
+func GetArtistTypesPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, artistTypesPath)
+}
+
+func GetArtistFiltersPath(page, area, genre, sex, index int) string {
+	return fmt.Sprintf("%s%s?area=%d&genre=%d&index=%d&sex=%d&page=%d", apiBasePath, artistFiltersPath, area, genre, index, sex, page)
+}

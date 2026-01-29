@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { GetRankingDetail } from "../../../wailsjs/go/backend/RankingBridge";
 import TopNavBar from "../../components/TopNavBar";
+import { message } from "antd"
 
 export default function RankDetailPage({ topId, onBack }) {
   const [rankData, setRankData] = useState(null);
@@ -8,6 +9,9 @@ export default function RankDetailPage({ topId, onBack }) {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+
   const scrollRef = useRef(null);
 
   // Reset pagination when switching to a new榜单
@@ -16,6 +20,10 @@ export default function RankDetailPage({ topId, onBack }) {
     setHasMore(true);
     setLoadingMore(false);
     setRankData(null);
+    setInitialLoading(true)
+    if (!topId) {
+      setInitialLoading(false)
+    }
   }, [topId]);
 
   useEffect(() => {
@@ -23,9 +31,11 @@ export default function RankDetailPage({ topId, onBack }) {
 
     async function fetchRankDetail() {
       try {
+        console.log(`Fetching ranking detail for topId: ${topId}, page: ${page}`);
         const detail = await GetRankingDetail(topId, page);
         const data = JSON.parse(detail);
         console.log("Ranking detail data:", data);
+        const songs = Array.isArray(data.data.song) ? data.data.song : [];
         if (page === 1) {
           setRankData(data.data);
         } else {
@@ -34,13 +44,16 @@ export default function RankDetailPage({ topId, onBack }) {
             song: [...prev.song, ...data.data.song],
           }));
         }
-        if (data.data.song.length < 100) {
+        if (songs.length < 100) {
           setHasMore(false);
         }
       } catch (error) {
         console.error("Error fetching ranking detail:", error);
+        message.error("网络连接超时");
+        onBack();
       } finally {
         setLoadingMore(false);
+        setInitialLoading(false);
       }
     }
     fetchRankDetail();
@@ -67,13 +80,24 @@ export default function RankDetailPage({ topId, onBack }) {
   }, [hasMore, loadingMore, topId]);
 
 
-  if (!rankData) return <div className="p-4">网络不给力，加载中...</div>;
+  if (initialLoading) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-warm-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (!rankData) {
+    return null;
+  }
 
   const {
     title,
     intro,
     listenNum,
     totalNum,
+    frontPicUrl,
     song = [],
   } = rankData;
 
@@ -101,7 +125,7 @@ export default function RankDetailPage({ topId, onBack }) {
         </p>
 
         {/* 简介（可折叠） */}
-        <div className="mt-3 text-sm text-gray-700">
+        {/* <div className="mt-3 text-sm text-gray-700">
           <div
             className={`transition-all ${
               showFullIntro ? "max-h-[500px]" : "max-h-[60px] overflow-hidden"
@@ -114,7 +138,7 @@ export default function RankDetailPage({ topId, onBack }) {
           >
             {showFullIntro ? "收起" : "展开全部"}
           </button>
-        </div>
+        </div> */}
 
         {/* 播放全部按钮 */}
         <div className="mt-4">
@@ -146,77 +170,68 @@ export default function RankDetailPage({ topId, onBack }) {
           return (
             <div
               key={s.songId}
-              className="group flex items-center py-2 border-b hover:bg-gray-100 transition cursor-pointer"
+              className="grid grid-cols-[80px_1fr_120px] items-center py-2 border-b hover:bg-gray-100 transition cursor-pointer gap-3"
             >
-              {/* 排名 */}
-              <div className="w-12 text-right pr-2 text-lg font-semibold text-gray-700">
-                {s.rank}
+              {/* 左侧：排名 + 封面 */}
+              <div className="flex items-center gap-2">
+                <div className="w-6 text-right text-lg font-semibold text-gray-700">
+                  {s.rank}
+                </div>
+                <img
+                  src={coverUrl}
+                  className="w-10 h-10 rounded-md object-cover shadow-sm"
+                />
               </div>
 
-              {/* 封面 */}
-              <img
-                src={coverUrl}
-                className="w-10 h-10 rounded-md object-cover shadow-sm"
-              />
-
-              {/* 歌曲信息 */}
-              <div className="ml-3 flex-1">
-                <p className="font-medium text-[15px] leading-tight">{s.title}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.singerName}</p>
+              {/* 中间：歌曲名 + 歌手名 */}
+              <div className="flex flex-col truncate">
+                <p className="font-medium text-[15px] truncate">{s.title}</p>
+                <p className="text-xs text-gray-500 truncate">{s.singerName}</p>
               </div>
 
-              {/* 操作按钮 */}
-              <div className="flex items-center gap-4 text-gray-600 pr-2">
-
-                {/* 播放按钮（参考你播放器的圆形 Play） */}
+              {/* 右侧：三个按钮 */}
+              <div className="flex items-center justify-between text-gray-600">
+                {/* 播放 */}
                 <button
-                  className="hover:text-warm-primary"
+                  className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     console.log("播放歌曲:", s.songId);
                   }}
                 >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="12" r="12" fill="currentColor" opacity="0.15" />
                     <path d="M10 8v8l6-4z" fill="currentColor" />
                   </svg>
                 </button>
 
-                {/* 收藏按钮 */}
+                {/* 收藏 */}
                 <button
-                  className="hover:text-warm-primary"
+                  className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     console.log("收藏歌曲:", s.songId);
                   }}
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z" />
                   </svg>
                 </button>
 
-                {/* 加入歌单（改成 + SVG） */}
+                {/* 添加 */}
                 <button
-                  className="hover:text-warm-primary"
+                  className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     console.log("加入歌单:", s.songId);
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path d="M12 5v14M5 12h14" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
+
             </div>
           );
         })}

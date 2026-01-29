@@ -1,27 +1,30 @@
 import { useState, useEffect } from "react";
 import SlidePage from "../../components/SlidePage";
 import RankDetailPage from "./RankDetailPage";
-
+import { message } from "antd"
 import { GetRankingLists } from "../../../wailsjs/go/backend/RankingBridge";
 
 export default function RankPage() {
   const [groups, setGroups] = useState([]);
   const [currentGroupId, setCurrentGroupId] = useState(null);
   const [currentTop, setCurrentTop] = useState(null);
-  const [currentTopId, setCurrentTopId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
+  const [showSpinner, setShowSpinner] = useState(false);
+  
 
+  useEffect(() => { const timer = setTimeout(() => setShowSpinner(true), 150); return () => clearTimeout(timer); }, []);
   useEffect(() => {
     async function load() {
       try {
         const lists = await GetRankingLists();
         const data = JSON.parse(lists);
         setGroups(data.data);
-
+        console.log("Fetched ranking lists:", data);
         if (data.data.length > 0) {
           setCurrentGroupId(data.data[0].groupId); // 修复 data(0)
         }
       } catch (error) {
+        message.error("网络连接超时")
         console.error("Error fetching ranking lists:", error);
       } finally {
         setLoading(false); // 修复 setIsLoading
@@ -32,8 +35,15 @@ export default function RankPage() {
   }, []);
 
   if (loading) {
-    return <div className="p-4">网络不给力，加载中...</div>;
-  }
+  return (
+    <div className="p-4 flex justify-center items-center">
+      {showSpinner && (
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-warm-primary border-t-transparent"></div>
+      )}
+    </div>
+  );
+}
+
 
   const currentGroup = groups.find((g) => g.groupId === currentGroupId);
 
@@ -106,7 +116,7 @@ export default function RankPage() {
                 {/* 底部：总歌曲数 */}
                 <div className="mt-1 text-[11px] md:text-xs text-warm-subtext flex justify-between items-center">
                   <span>共 {top.totalNum} 首歌曲</span>
-                  <span className="opacity-70" onClick={() => {console.log("click:", top.topId); setCurrentTopId(top.topId)}}>查看全部 &gt;</span>
+                  <span className="opacity-70" onClick={() => {setCurrentTop(top);}}>查看全部 &gt;</span>
                 </div>
               </div>
             </div>
