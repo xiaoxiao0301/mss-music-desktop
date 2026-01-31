@@ -45,6 +45,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
         <NavItem label="歌手" active={currentPage === "artist"} collapsed={collapsed} onClick={() => setCurrentPage("artist")} />
         <NavItem label="排行榜" active={currentPage === "rank"} collapsed={collapsed} onClick={() => setCurrentPage("rank")} />
         <NavItem label="电台" active={currentPage === "radio"} collapsed={collapsed} onClick={() => setCurrentPage("radio")} />
+        <NavItem label="MV" active={currentPage === "mv"} collapsed={collapsed} onClick={() => setCurrentPage("mv")} />
 
         <SectionTitle collapsed={collapsed}>我的音乐</SectionTitle>
         <NavItem label="喜欢的音乐" active={currentPage === "fav"} collapsed={collapsed} onClick={() => setCurrentPage("fav")} />

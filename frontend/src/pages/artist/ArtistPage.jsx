@@ -1,144 +1,198 @@
-import { useEffect, useState, useRef } from "react";
-import { message } from "antd";
+import { useEffect, useState } from "react";
 import { GetArtistTypes, GetArtistListByFilters } from "../../../wailsjs/go/backend/ArtistBridge";
+import { message } from "antd";
+import SlidePage from "../../components/SlidePage";
+import ArtistDetailPage from "./ArtistDetailPage";
+import { formatConcern } from "../../utils/helper";
 
-export default function SingerPage() {
-  const [filterMeta, setFilterMeta] = useState({
-    area: [],
-    genre: [],
-    index: [],
-    sex: [],
-  });
+export default function ArtistPage() {
+  const [categories, setCategories] = useState(null);
 
-  const [filters, setFilters] = useState({
-    area: -100,
-    genre: -100,
-    index: -100,
-    sex: -100,
-  });
+  const [area, setArea] = useState(-100);
+  const [genre, setGenre] = useState(-100);
+  const [sex, setSex] = useState(-100);
+  const [index, setIndex] = useState(-100);
 
   const [page, setPage] = useState(1);
-  const [size] = useState(80);
   const [total, setTotal] = useState(0);
 
-  const [hotlist, setHotlist] = useState([]);
-  const [singerlist, setSingerlist] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hotList, setHotList] = useState([]);
+  const [singerList, setSingerList] = useState([]);
 
-  const scrollRef = useRef(null);
+  const [currentArtist, setCurrentArtist] = useState(null);
 
-  // 加载筛选元数据
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    async function loadFilterMeta() {
-      try {
-        const res = await GetArtistTypes();
-        console.log("Fetched artist types:", res);
-        const data = typeof res === "string" ? JSON.parse(res) : res;
-        console.log("Fetched artist types:", data);
-        if (data.code === 20000) {
-          setFilterMeta(data.data);
-        } else {
-          message.error("获取歌手筛选数据失败");
-        }
-      } catch (e) {
-        console.error(e);
-        message.error("网络连接超时");
-      }
-    }
-    loadFilterMeta();
+    loadCategories();
   }, []);
 
-  const loadSingerList = async () => {
-      try {
-        if (page === 1) {
-          setLoading(true);
-        } else {
-          setLoadingMore(true);
-        }
-        const res = await GetArtistListByFilters(page, filters.area, filters.genre, filters.sex, filters.index);
-        console.log("Fetched artist list:", res);
-        const data = typeof res === "string" ? JSON.parse(res) : res;
-        console.log("Fetched artist list-d:", data);
-        if (data.code !== 20000) {
-          message.error("获取歌手列表失败");
-          return;
-        }
-
-        const d = data.data;
-        setTotal(d.total || 0);
-        setHotlist(d.hotlist || []);
-
-        if (page === 1) {
-          setSingerlist(d.singerlist || []);
-        } else {
-          setSingerlist(prev => [...prev, ...(d.singerlist || [])]);
-        }
-
-        const loadedCount = (page - 1) * size + (d.singerlist?.length || 0);
-        setHasMore(loadedCount < d.total);
-      } catch (e) {
-        console.error(e);
-        message.error("网络连接超时");
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-  }
-
-  // 加载歌手列表
   useEffect(() => {
-    loadSingerList();
-  }, [filters, page]);
+    loadArtistList();
+  }, [area, genre, sex, index, page]);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    const target = el || window;
+  const loadCategories = async () => {
+    try {
+      const res = await GetArtistTypes();
+      const data = typeof res === "string" ? JSON.parse(res) : res;
 
-    function handleScroll() {
-      if (loadingMore || !hasMore) return;
-      const threshold = 200;
-      const scrollTop = el ? el.scrollTop : window.scrollY || document.documentElement.scrollTop;
-      const clientHeight = el ? el.clientHeight : window.innerHeight;
-      const scrollHeight = el ? el.scrollHeight : document.documentElement.scrollHeight;
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - threshold;
-      if (nearBottom) {
-        setPage(prev => prev + 1);
-      }
+      console.log("歌手分类列表：", data);
+
+      setCategories(data.data);
+    } catch (e) {
+      console.error(e);
+      message.error("获取歌手分类失败");
     }
+  };
 
-    target.addEventListener("scroll", handleScroll, { passive: true });
-    return () => target.removeEventListener("scroll", handleScroll);
-  }, [loadingMore, hasMore]);
+  const loadArtistList = async () => {
+    try {
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+      setLoading(true);
+
+      const res = await GetArtistListByFilters(page, area, genre, sex, index);
+      const data = typeof res === "string" ? JSON.parse(res) : res;
+
+      console.log("歌手列表数据：", data);
+
+      const listData = data.data;
+      setHotList(listData.hotlist || []);
+      setSingerList(listData.singerlist || []);
+      setTotal(listData.total || 0);
+    } catch (e) {
+      console.error(e);
+      message.error("获取歌手列表失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPageAndLoad = (setter, value) => {
+    setter(value);
     setPage(1);
   };
 
-  const formatConcern = num => {
-    if (!num) return "";
-    if (num > 100000000) return (num / 100000000).toFixed(1) + " 亿关注";
-    if (num > 10000) return (num / 10000).toFixed(1) + " 万关注";
-    return num + " 关注";
-  };
+  
 
-  const renderFilterGroup = (label, key, list) => (
-    <div className="flex items-center py-2 border-b border-gray-100">
-      <div className="w-16 text-gray-500 text-sm">{label}</div>
-      <div className="flex flex-wrap gap-2">
-        {list.map(item => (
+
+  return (
+    <div className="relative flex flex-col h-full overflow-hidden p-4">
+      {loading && (
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-[999] flex flex-col items-center justify-center pointer-events-none">
+          <div className="animate-spin w-8 h-8 border-4 border-warm-primary border-t-transparent rounded-full"></div>
+          <p className="text-sm text-warm-subtext mt-2">加载中...</p>
+        </div>
+      )}
+
+
+      {/* 分类筛选 */}
+      {categories && (
+        <div className="card p-4 mb-4">
+          <p className="text-sm font-bold mb-2">歌手筛选</p>
+
+          {/* 地区 */}
+          <FilterRow
+            title="地区"
+            list={categories.area}
+            selected={area}
+            onSelect={(v) => resetPageAndLoad(setArea, v)}
+          />
+
+          {/* 流派 */}
+          <FilterRow
+            title="流派"
+            list={categories.genre}
+            selected={genre}
+            onSelect={(v) => resetPageAndLoad(setGenre, v)}
+          />
+
+          {/* 性别 */}
+          <FilterRow
+            title="性别"
+            list={categories.sex}
+            selected={sex}
+            onSelect={(v) => resetPageAndLoad(setSex, v)}
+          />
+
+          {/* 首字母 */}
+          {/* <FilterRow
+            title="首字母"
+            list={categories.index}
+            selected={index}
+            onSelect={(v) => resetPageAndLoad(setIndex, v)}
+          /> */}
+        </div>
+      )}
+
+      {/* 热门歌手 */}
+      <div className="card p-4 mb-4">
+        <p className="text-sm font-bold mb-3">热门歌手</p>
+
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {hotList.map((artist) => (
+            <div className="min-w-[120px]" key={artist.singer_id}>
+              <ArtistCard
+                artist={artist}
+                onClick={() => setCurrentArtist(artist.singer_mid)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+
+      {/* 歌手列表 */}
+      <div className="flex-1 overflow-auto card p-4">
+        <p className="text-sm font-bold mb-3">全部歌手</p>
+
+        <div className="grid grid-cols-5 gap-4">
+          {singerList.map((artist) => (
+            <ArtistCard
+              key={artist.singer_id}
+              artist={artist}
+              onClick={() => setCurrentArtist(artist.singer_mid)}
+            />
+          ))}
+        </div>
+
+        {/* 加载更多 */}
+        {singerList.length < total && (
+          <div className="text-center py-6">
+            <button
+              className="px-4 py-2 bg-warm-primary text-white rounded-lg"
+              onClick={() => setPage((p) => p + 1)}
+            >
+              加载更多
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 详情页 */}
+      <SlidePage show={!!currentArtist}>
+        <ArtistDetailPage
+          artistMid={currentArtist}
+          onBack={() => setCurrentArtist(null)}
+        />
+      </SlidePage>
+    </div>
+  );
+}
+
+/* ------------------ 子组件：筛选行 ------------------ */
+function FilterRow({ title, list, selected, onSelect }) {
+  return (
+    <div className="flex items-center mb-3">
+      <span className="w-16 text-sm text-warm-subtext">{title}</span>
+      <div className="flex gap-2 flex-wrap">
+        {list.map((item) => (
           <button
             key={item.id}
-            onClick={() => { console.log(label, key, "click");handleFilterChange(key, item.id)}}
-            className={`px-3 py-1 rounded-lg text-sm transition ${
-              filters[key] === item.id
+            onClick={() => onSelect(item.id)}
+            className={`px-3 py-1 rounded-lg text-sm ${
+              selected === item.id
                 ? "bg-warm-primary text-white"
-                : "bg-gray-100 hover:bg-gray-200"
+                : "bg-warm-secondary hover:bg-warm-secondary/70"
             }`}
           >
             {item.name}
@@ -147,99 +201,32 @@ export default function SingerPage() {
       </div>
     </div>
   );
+}
+
+/* ------------------ 子组件：歌手卡片 ------------------ */
+
+
+function ArtistCard({ artist, onClick }) {
+  const pic = `https://y.qq.com/music/photo_new/T001R300x300M000${artist.singer_mid}.jpg`;
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-white" ref={scrollRef}>
-      {/* 顶部标题 */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold">歌手</h1>
-        <p className="text-xs text-gray-500">共 {total} 位歌手</p>
-      </div>
+    <div
+      className="cursor-pointer hover:bg-warm-secondary/40 p-3 rounded-lg transition flex flex-col items-center"
+      onClick={onClick}
+    >
+      <img
+        src={pic}
+        className="w-24 h-24 rounded-full object-cover shadow mb-2"
+      />
 
-      {/* 筛选区 */}
-      <div className="px-4 pt-4">
-        <div className="bg-white rounded-lg border shadow-sm">
-          {renderFilterGroup("地区", "area", filterMeta.area || [])}
-          {renderFilterGroup("流派", "genre", filterMeta.genre || [])}
-          {/* {renderFilterGroup("字母", "index", filterMeta.index || [])} */}
-          {renderFilterGroup("性别", "sex", filterMeta.sex || [])}
-        </div>
-      </div>
+      <p className="text-sm font-bold truncate text-center">{artist.singer_name}</p>
 
-      {/* 热门歌手 */}
-      {hotlist && hotlist.length > 0 && (
-        <div className="px-4 mt-6">
-          <h2 className="text-sm font-semibold mb-3">热门歌手</h2>
-          <div className="grid grid-cols-6 gap-4">
-            {hotlist.map(s => {
-              const pic =
-                s.singer_pic ||
-                `https://y.qq.com/music/photo_new/T001R300x300M000${s.singer_mid}.jpg`;
-              return (
-                <div
-                  key={s.singer_id}
-                  className="flex flex-col items-center text-center cursor-pointer group"
-                >
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-2">
-                    <img
-                      src={pic}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <p className="text-sm font-medium truncate w-full">{s.singer_name}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    {formatConcern(s.concernNum)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {artist.concernNum && (
+        <p className="text-xs text-warm-subtext mt-1">
+          {formatConcern(artist.concernNum)}
+        </p>
       )}
-
-      {/* 歌手列表 */}
-      <div className="px-4 mt-6 pb-10">
-        <h2 className="text-sm font-semibold mb-3">全部歌手</h2>
-
-        {loading && page === 1 ? (
-          <div className="flex justify-center items-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-warm-primary border-t-transparent" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-5 gap-4">
-            {singerlist.map(s => {
-              const pic =
-                s.singer_pic ||
-                `https://y.qq.com/music/photo_new/T001R300x300M000${s.singer_mid}.jpg`;
-              return (
-                <div
-                  key={s.singer_id}
-                  className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer"
-                >
-                  <img
-                    src={pic}
-                    className="w-12 h-12 rounded-full object-cover bg-gray-100"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{s.singer_name}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-                      {formatConcern(s.concernNum)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* 加载更多 / 没有更多 */}
-        {loadingMore && (
-          <div className="text-center py-4 text-gray-500 text-sm">加载中...</div>
-        )}
-        {!hasMore && !loading && (
-          <div className="text-center py-4 text-gray-400 text-xs">没有更多了</div>
-        )}
-      </div>
     </div>
   );
 }
+

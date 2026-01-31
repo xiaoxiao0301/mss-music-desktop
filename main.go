@@ -43,6 +43,9 @@ func main() {
 	authBridge := backend.NewAuthBridge(apiClient, tokenStore)
 	rankingBridge := backend.NewRankingBridge(apiClient)
 	artistBridge := backend.NewArtistBridge(apiClient)
+	playlistBridge := backend.NewPlaylistBridge(apiClient)
+	radioBridge := backend.NewRadioBridge(apiClient)
+	mvBridge := backend.NewMVBridge(apiClient)
 
 	// Create application with options
 	err = wails.Run(&options.App{
@@ -63,6 +66,9 @@ func main() {
 			authBridge,
 			rankingBridge,
 			artistBridge,
+			playlistBridge,
+			radioBridge,
+			mvBridge,
 		},
 		Debug: options.Debug{
 			OpenInspectorOnStartup: true,

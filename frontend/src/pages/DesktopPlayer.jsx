@@ -12,6 +12,7 @@ import LyricsFullScreen from "../components/LyricsFullScreen.jsx";
 import FavoritePlaylistsPage from "./liked/FavoritePlaylistsPage.jsx";
 import FavoriteArtistsPage from "./liked/FavoriteArtistsPage.jsx";
 import RecentPlaysPage from "./recent/RecentPlaysPage.jsx";
+import MVPage from "./mvs/MVPage.jsx";
 import { useMusicPlayer } from "../context/MusicContext.jsx";
 
 export default function DesktopPlayer() {
@@ -42,6 +43,7 @@ export default function DesktopPlayer() {
             {currentPage === "fav-playlist" && <FavoritePlaylistsPage />}
             {currentPage === "fav-artist" && <FavoriteArtistsPage />}
             {currentPage === "recent" && <RecentPlaysPage />}
+            {currentPage === "mv" && <MVPage />}
         </main>
 
       </div>

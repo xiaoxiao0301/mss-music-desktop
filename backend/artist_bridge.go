@@ -23,3 +23,11 @@ func (a *ArtistBridge) GetArtistListByFilters(page, area, genre, sex, index int)
 	}
 	return string(resp), nil
 }
+
+func (a *ArtistBridge) GetArtistDetail(artistID string, page uint) (string, error) {
+	resp, err := a.api.Get(GetArtistDetailPath(artistID, page))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

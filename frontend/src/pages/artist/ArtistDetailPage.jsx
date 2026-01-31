@@ -1,162 +1,186 @@
-import { useState } from "react";
-import {
-  mockArtistDetail,
-  mockHotSongs,
-  mockAlbums,
-  mockMVs,
-} from "../../mock/artistDetail";
+import { useEffect, useState } from "react";
 import TopNavBar from "../../components/TopNavBar";
-import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
+import { GetArtistDetail } from "../../../wailsjs/go/backend/ArtistBridge";
+import { message } from "antd";
+import { formatTime, formatConcern } from "../../utils/helper";
 
-export default function ArtistDetailPage({ artistId, onBack }) {
-  const artist = mockArtistDetail[artistId] || mockArtistDetail[1];
-  const [tab, setTab] = useState("songs");
-  const { isFavoriteArtist, toggleFavoriteArtist } = useFavorite();
-  const { playTrack } = useMusicPlayer();
+export default function ArtistDetailPage({ artistMid, onBack }) {
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  // 当前 Tab：intro / songs / albums / mv
+  const [tab, setTab] = useState("intro");
+
+  useEffect(() => {
+    if (!artistMid) return;
+    loadDetail(artistMid);
+  }, [artistMid, page]);
+
+  const loadDetail = async (mid) => {
+    try {
+      setLoading(true);
+
+      const res = await GetArtistDetail(mid, page);
+      const data = typeof res === "string" ? JSON.parse(res) : res;
+
+      if (data.code !== 20000 && data.code !== 1) {
+        message.error("获取歌手详情失败");
+        return;
+      }
+      console.log("歌手详情数据：", data); 
+      setDetail(data.data);
+    } catch (e) {
+      console.error(e);
+      message.error("网络连接超时");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!artistMid) return null;
+
+  const singer = detail?.singer_info;
 
   return (
-    <div className="flex-1 overflow-auto p-4">
+    <div className="flex flex-col h-full overflow-hidden bg-white">
 
-      <TopNavBar 
-        onBack={onBack}
-      />  
+      {/* 顶部栏 */}
+      <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b p-4 flex items-center justify-between">
+        <TopNavBar onBack={onBack} />
+      </div>
 
-      {/* 顶部封面 */}
-      <div
-        className="w-full h-48 rounded-xl bg-cover bg-center mb-6"
-        style={{ backgroundImage: `url(${mockArtistDetail.cover})` }}
-      ></div>
+      {loading && (
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="animate-spin w-10 h-10 border-4 border-warm-primary border-t-transparent rounded-full"></div>
+          <p className="text-sm text-warm-subtext mt-3">加载中...</p>
+        </div>
+      )}
 
-      {/* 歌手信息 */}
-      <div className="flex items-center gap-6 mb-6">
-        <img
-          src={mockArtistDetail.avatar}
-          className="w-32 h-32 rounded-full object-cover shadow-warm"
-        />
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{mockArtistDetail.name}</h1>
-          <p className="text-warm-subtext max-w-xl">{mockArtistDetail.desc}</p>
+      {!loading && detail && (
+        <div className="flex-1 overflow-auto p-4">
 
-          <div className="flex gap-3 mt-4">
-            <button 
-              className="btn-primary"
-              onClick={() => playTrack(mockHotSongs[0], mockHotSongs)}
-            >
-              播放热门歌曲
-            </button>
-            <button className="btn-secondary">关注歌手</button>
-            <button onClick={() => toggleFavoriteArtist(mockArtistDetail)}
-              className={`px-4 py-2 rounded-lg text-sm ${
-                isFavoriteArtist(mockArtistDetail.id)
-                  ? "bg-red-500 text-white"
-                  : "bg-warm-secondary hover:bg-warm-secondary/70"
-              }`}
-            >
-              {isFavoriteArtist(mockArtistDetail.id) ? "❤️ 已收藏" : "🤍 收藏歌手"}
-            </button>
+          <div className="card p-6 mb-4 flex gap-6 items-center">
+            <img
+              src={`https://y.qq.com/music/photo_new/T001R300x300M000${singer.mid}.jpg`}
+              className="w-40 h-40 rounded-xl object-cover shadow-lg"
+            />
+
+            <div className="flex flex-col justify-between">
+              <h1 className="text-2xl font-bold">{singer.name}</h1>
+
+              {singer.other_name && (
+                <p className="text-warm-subtext mt-1">
+                  别名：{singer.other_name}
+                </p>
+              )}
+
+              <p className="text-sm text-warm-subtext mt-1">
+                粉丝：{formatConcern(singer.fans)}
+              </p>
+
+              <div className="flex gap-4 text-sm text-warm-subtext mt-2">
+                <span>歌曲：{detail.total_song}</span>
+                <span>专辑：{detail.total_album}</span>
+                <span>MV：{detail.total_mv}</span>
+              </div>
+            </div>
           </div>
+
+          {/* Tab 切换 */}
+          <div className="flex gap-4 mb-4 border-b border-warm-secondary/40 pb-2">
+            {[
+              { key: "intro", label: "简介" },
+              { key: "songs", label: "歌曲" },
+              { key: "albums", label: "专辑" },
+              { key: "mv", label: "MV" },
+            ].map((t) => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`pb-1 text-sm ${
+                  tab === t.key
+                    ? "text-warm-primary border-b-2 border-warm-primary"
+                    : "text-warm-subtext"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab 内容区域 */}
+          {tab === "intro" && (
+            <div className="card p-4 mb-4">
+              <p className="text-lg font-bold mb-2">歌手简介</p>
+              <p className="text-sm leading-relaxed text-warm-subtext whitespace-pre-line">
+                {detail.singer_brief}
+              </p>
+            </div>
+          )}
+
+          {tab === "songs" && (
+            <div className="card p-4 mb-4">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-lg font-bold">热门歌曲</p>
+                <button className="text-sm text-warm-primary">
+                  ▶ 全部播放
+                </button>
+              </div>
+
+              {detail.songlist.map((song) => (
+                <div key={song.id} className="flex items-center justify-between py-3 border-b border-warm-secondary/40 hover:bg-warm-secondary/40 px-2 rounded-lg transition cursor-pointer" >
+                  <div>
+                    <p className="font-medium">{song.title}</p>
+
+                    <p className="text-sm text-warm-subtext">
+                      {song.singer.map((s) => s.name).join(" / ")}
+                    </p>
+
+                    <p className="text-xs text-warm-subtext mt-1">
+                      专辑：{song.album.title}
+                    </p>
+                  </div>
+
+                  <span className="text-sm text-warm-subtext">
+                    {formatTime(song.interval)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+
+          {tab === "albums" && (
+            <div className="card p-4 mb-4">
+              <p className="text-lg font-bold mb-3">专辑</p>
+
+              {detail.albumlist?.map((album) => (
+                <div key={album.id} className="flex items-center gap-4 py-3 border-b border-warm-secondary/40" >
+                  <img src={`https://y.qq.com/music/photo_new/T002R300x300M000${album.mid}.jpg`} className="w-16 h-16 rounded-lg object-cover" />
+                  <div>
+                    <p className="font-medium">{album.title}</p>
+                    <p className="text-sm text-warm-subtext">{album.time_public}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "mv" && (
+            <div className="card p-4 mb-4">
+              <p className="text-lg font-bold mb-3">MV</p>
+
+              {detail.mvlist?.map((mv) => (
+                <div key={mv.id} className="flex items-center gap-4 py-3 border-b border-warm-secondary/40" >
+                  <img src={`https://y.qq.com/music/photo_new/T015R640x360M101${mv.vid}.jpg`} className="w-28 h-16 rounded-lg object-cover" />
+                  <div>
+                    <p className="font-medium">{mv.title}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
-      </div>
-
-      {/* Tab 切换 */}
-      <div className="flex gap-6 border-b border-warm-secondary/40 mb-6">
-        <TabButton label="热门歌曲" value="songs" tab={tab} setTab={setTab} />
-        <TabButton label="专辑" value="albums" tab={tab} setTab={setTab} />
-        <TabButton label="MV" value="mvs" tab={tab} setTab={setTab} />
-        <TabButton label="歌手介绍" value="intro" tab={tab} setTab={setTab} />
-      </div>
-
-      {/* 内容区 */}
-      {tab === "songs" && <HotSongs playTrack={playTrack} />}
-      {tab === "albums" && <Albums />}
-      {tab === "mvs" && <MVs />}
-      {tab === "intro" && <Intro />}
-    </div>
-  );
-}
-
-/* ---------------- Tab 按钮 ---------------- */
-
-function TabButton({ label, value, tab, setTab }) {
-  const active = tab === value;
-  return (
-    <button
-      onClick={() => setTab(value)}
-      className={`pb-2 text-sm ${
-        active
-          ? "text-warm-primary border-b-2 border-warm-primary font-bold"
-          : "text-warm-subtext hover:text-warm-text"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-/* ---------------- 热门歌曲 ---------------- */
-
-function HotSongs({ playTrack }) {
-  return (
-    <div className="card">
-      {mockHotSongs.map((song) => (
-        <div 
-          key={song.id} 
-          className="list-item cursor-pointer hover:bg-warm-secondary/20"
-          onClick={() => playTrack(song, mockHotSongs)}
-        >
-          <span className="font-medium">{song.name}</span>
-          <span className="text-sm text-warm-subtext">{song.duration}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ---------------- 专辑 ---------------- */
-
-function Albums() {
-  return (
-    <div className="grid grid-cols-5 gap-6">
-      {mockAlbums.map((album) => (
-        <div key={album.id} className="cursor-pointer">
-          <img
-            src={album.cover}
-            className="w-full h-40 object-cover rounded-xl shadow-warm mb-2"
-          />
-          <p className="text-sm font-medium">{album.name}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ---------------- MV ---------------- */
-
-function MVs() {
-  return (
-    <div className="grid grid-cols-4 gap-6">
-      {mockMVs.map((mv) => (
-        <div key={mv.id} className="cursor-pointer">
-          <img
-            src={mv.cover}
-            className="w-full h-32 object-cover rounded-xl shadow-warm mb-2"
-          />
-          <p className="text-sm font-medium">{mv.name}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ---------------- 歌手介绍 ---------------- */
-
-function Intro() {
-  return (
-    <div className="card p-4 leading-relaxed text-warm-text">
-      {mockArtistDetail.desc}
-      <br />
-      <br />
-      这里可以放更详细的歌手介绍、经历、获奖记录等内容。
+      )}
     </div>
   );
 }
