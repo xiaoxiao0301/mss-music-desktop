@@ -103,9 +103,10 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      await Login(phone, code)
+      const userID = await Login(phone, code)
       message.success("登录成功")
       setLoginCooldown(300)
+      localStorage.setItem("userID", userID);
       // ⭐ 登录成功后跳转到首页
       navigate("/home")
     } catch (err) {

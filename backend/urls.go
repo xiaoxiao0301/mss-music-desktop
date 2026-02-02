@@ -5,6 +5,12 @@ import "fmt"
 const (
 	apiBasePath = "/api"
 
+	recommendBannersPath = "/recommend/banners"
+	recommendDailyPaht 	= "/recommend/daily"
+	recommendNewSongPath = "/recommend/newsong"
+	recommendNewAlbumPath = "/recommend/newalbum"
+	recommendPlaylistOfficialPath = "/recommend/official/playlist" 
+
 	authPath    = "/auth/request-otp"
 	authVerifyPath  = "/auth/verify-otp"
 	authRefreshPath = "/auth/refresh"
@@ -95,4 +101,24 @@ func GetMVListByCategoryPath(area, version, page uint) string {
 
 func GetMVDetailPath(mvid string) string {
 	return fmt.Sprintf("%s%s?mvid=%s", apiBasePath, mvDetailPath, mvid)
+}
+
+func GetRecommendBannersPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, recommendBannersPath)
+}
+
+func GetRecommendDailyPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, recommendDailyPaht)
+}
+
+func GetRecommendNewSongPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, recommendNewSongPath)
+}
+
+func GetRecommendNewAlbumPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, recommendNewAlbumPath)
+}
+
+func GetRecommendPlaylistOfficialPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, recommendPlaylistOfficialPath)
 }

@@ -1,7 +1,9 @@
 package backend
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"sync"
 
@@ -14,6 +16,7 @@ const (
     tokenKey    = "auth_token"
     refreshKey  = "refresh_token"
     deviceIDKey  = "device_id"
+    userProfileKeyPrefix = "user_profile_"
 )
 
 var (
@@ -22,6 +25,11 @@ var (
 )
 
 type KeyringTokenStore struct{}
+
+type UserProfile struct {
+    Avatar string   `json:"avatar"`
+    Nickname string `json:"nickname"`
+}
 
 func NewKeyringTokenStore() *KeyringTokenStore {
     return &KeyringTokenStore{}
@@ -94,3 +102,29 @@ func (s *KeyringTokenStore) GetDeviceID() (string, error) {
     return deviceIDCache, nil
 }
 
+func (s *KeyringTokenStore) SaveUserProfile(userID int, profile UserProfile) error {
+    data, _ := json.Marshal(profile)
+    key := fmt.Sprintf("%s%d", userProfileKeyPrefix, userID)
+    if err := keyring.Set(serviceName, key, string(data)); err != nil {
+        log.Printf("Keyring Set Error (user profile): %v\n", err)
+        return err
+    }
+    return nil
+}
+
+func (s *KeyringTokenStore) LoadUserProfile(userID int) (*UserProfile, error) {
+    key := fmt.Sprintf("%s%d", userProfileKeyPrefix, userID)
+    data, err := keyring.Get(serviceName, key)
+    if err != nil {
+        if errors.Is(err, keyring.ErrNotFound) {
+            return nil, nil
+        }
+        return nil, err
+    }
+
+    var profile UserProfile
+    if err := json.Unmarshal([]byte(data), &profile); err != nil {
+        return nil, err
+    }
+    return &profile, nil
+}

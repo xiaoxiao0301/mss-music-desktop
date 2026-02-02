@@ -46,6 +46,7 @@ func main() {
 	playlistBridge := backend.NewPlaylistBridge(apiClient)
 	radioBridge := backend.NewRadioBridge(apiClient)
 	mvBridge := backend.NewMVBridge(apiClient)
+	recommendBridge := backend.NewRecommendBridge(apiClient)
 
 	// Create application with options
 	err = wails.Run(&options.App{
@@ -69,6 +70,7 @@ func main() {
 			playlistBridge,
 			radioBridge,
 			mvBridge,
+			recommendBridge,
 		},
 		Debug: options.Debug{
 			OpenInspectorOnStartup: true,

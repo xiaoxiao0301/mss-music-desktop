@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GetPlaylistCategoriesListDetail } from "../../../wailsjs/go/backend/PlaylistBridge";
 import { message } from "antd";
-import { fixUrl } from "../../utils/helper";
+import { fixUrl, formatPlaylistAuthor } from "../../utils/helper";
 
 export default function PlaylistDetailPage({ playlistId, onBack }) {
   const [detail, setDetail] = useState(null);
@@ -77,7 +77,7 @@ function HeaderSection({ detail, fixUrl }) {
 
         <div className="flex items-center gap-2 mt-2">
           <img src={fixUrl(detail.logo)} className="w-6 h-6 rounded-full" />
-          <span className="text-sm text-gray-500">{detail.nickname}</span>
+          <span className="text-sm text-gray-500">{formatPlaylistAuthor(detail)}</span>
         </div>
 
         <div className="flex flex-wrap gap-2 mt-3">
@@ -102,7 +102,7 @@ function StatsSection({ detail }) {
     <div className="px-4 py-2 text-sm text-gray-500 flex gap-4 border-b">
       <span>播放量：{formatNumber(detail.visitnum)}</span>
       <span>歌曲数：{detail.songnum}</span>
-      <span>创建时间：{formatDate(detail.ctime)}</span>
+      {/* <span>创建时间：{formatDate(detail.ctime)}</span> */}
     </div>
   );
 }

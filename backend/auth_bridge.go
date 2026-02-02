@@ -2,7 +2,9 @@ package backend
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"math/rand"
 )
 
 type AuthBridge struct {
@@ -19,12 +21,20 @@ type AuthMeResponse struct {
     } `json:"data"`
 } 
 
+type UserDTO struct {
+    ID int `json:"ID"` 
+    Phone string `json:"Phone"` 
+    CreatedAt string `json:"CreatedAt"` 
+    UpdatedAt string `json:"UpdatedAt"`
+}
+
 type LoginResponse struct {
     Code    int    `json:"code"`
     Message string `json:"message"`
     Data    struct {
         AccessToken  string `json:"access_token"`
         RefreshToken string `json:"refresh_token"`
+        User       UserDTO      `json:"user"`
     } `json:"data"`
 }
 
@@ -49,22 +59,29 @@ func (a *AuthBridge) SendOtp(phone string) error {
 }
 
 // 登录（手机号 + 验证码）
-func (a *AuthBridge) Login(phone string, code string) (error) {
+func (a *AuthBridge) Login(phone string, code string) (int, error) {
     resp, err := a.api.Post(GetVerifyOTPPath(), map[string]string{
         "phone": phone,
         "code":  code,
     })
     if err != nil {
-        return err
+        return 0,err
     }
 
     var result LoginResponse
     if err := json.Unmarshal(resp, &result); err != nil {
-        return err
+        return 0, err
     }
 
     a.tokenStore.Save(result.Data.AccessToken, result.Data.RefreshToken)
-    return nil
+
+    // 生成随机头像与昵称（仅第一次） 
+    avatar := fmt.Sprintf("https://i.pravatar.cc/100?img=%d", rand.Intn(70)) 
+    nickname := []string{"小明", "阿杰", "星河旅人", "音乐探索者", "夜行者"}[rand.Intn(5)]
+
+    a.tokenStore.SaveUserProfile(result.Data.User.ID, UserProfile{ Avatar: avatar, Nickname: nickname, })
+
+    return result.Data.User.ID, nil
 }
 
 func (a *AuthBridge) Logout() error {
@@ -86,4 +103,8 @@ func (a *AuthBridge) IsLoggedIn() bool {
         status = true
     }
     return  status
+}
+
+func (a *AuthBridge) GetUserProfile(userID int) (*UserProfile, error) {
+    return a.tokenStore.LoadUserProfile(userID)
 }

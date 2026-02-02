@@ -1,10 +1,33 @@
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { GetUserProfile } from "../../wailsjs/go/backend/AuthBridge";
 export default function Sidebar({ currentPage, setCurrentPage }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [profile, setProfile] = useState(null);
+
+  const loadUserProfile = async () => {
+    try {
+      const userID = localStorage.getItem("userID");
+      if (!userID) return;
+
+      const profileData = await GetUserProfile(parseInt(userID));
+      console.log("Loaded user profile:", profileData);
+      setProfile(profileData);
+    } catch (e) {
+      console.error("Failed to load user profile:", e);
+    }
+  }
 
   const randomAvatar = `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70)}`;
   const randomName = ["小明", "阿杰", "星河旅人", "音乐探索者", "夜行者"][Math.floor(Math.random() * 5)];
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  console.log("User profile in sidebar:", profile);
+  const avatar = profile?.avatar || randomAvatar;
+  const nickname = profile?.nickname || randomName;
+  const loggedIn = !!profile;
 
   return (
     <aside
@@ -17,13 +40,13 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
       {/* 顶部：用户信息 + 折叠按钮 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 overflow-hidden transition-all duration-300">
-          <img src={randomAvatar} className="w-10 h-10 rounded-full" />
+          <img src={avatar} className="w-10 h-10 rounded-full" />
 
           {/* 昵称：收缩时隐藏 */}
           {!collapsed && (
             <div className="transition-opacity duration-300">
-              <p className="font-bold">{randomName}</p>
-              <p className="text-xs text-warm-subtext">未登录</p>
+              <p className="font-bold">{nickname}</p>
+              <p className="text-xs text-warm-subtext">{loggedIn ? "已登录" : "未登录"}</p>
             </div>
           )}
         </div>
