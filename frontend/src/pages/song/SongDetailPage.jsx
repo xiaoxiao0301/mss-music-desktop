@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { message } from "antd";
-import { GetSongDetail } from "../../../wailsjs/go/backend/SongBridge";
-import { formatSize, formatTime } from "../../utils/helper";
+import { GetSongDetail, GetSongPlayURL } from "../../../wailsjs/go/backend/SongBridge";
+import { formatSize, formatTime, normalizeJson } from "../../utils/helper";
 import TopNavBar from "../../components/TopNavBar";
+import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
 
 export default function SongDetailPage({ songMid, onBack }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { isPlaying, currentTrack, playTrack, pauseTrack } = useMusicPlayer(); 
+  const { isLiked, toggleLike } = useFavorite();
 
   useEffect(() => {
     if (!songMid) return;
@@ -31,6 +34,25 @@ export default function SongDetailPage({ songMid, onBack }) {
     }
   };
 
+  const loadSongPlayURL = async (mid) => {
+    try {
+      const res = await GetSongPlayURL(mid);
+      const data = normalizeJson(res);
+      if (data.code !== 20000) {
+        message.error("获取歌曲播放地址失败");
+        return null;
+      }
+      if (!data.data || !data.data.url) {
+        message.error("歌曲暂无播放地址");
+        return null;
+      }
+      return data.data.url;
+    } catch (err) {
+      message.error("加载歌曲播放地址失败");
+      return null;
+    }
+  }
+
   if (loading) return <SongDetailSkeleton />;
   if (!detail) return null;
 
@@ -47,7 +69,17 @@ export default function SongDetailPage({ songMid, onBack }) {
       </div>
 
       {/* 大封面头部 */}
-      <HeroHeader track={track} coverUrl={coverUrl} />
+      <HeroHeader 
+        track={track} 
+        coverUrl={coverUrl}  
+        loadSongPlayURL={loadSongPlayURL} 
+        playTrack={playTrack} 
+        pauseTrack={pauseTrack} 
+        isPlaying={isPlaying}
+        currentTrack={currentTrack}
+        isLiked={isLiked} 
+        toggleLike={toggleLike}
+      />
 
       {/* 信息卡片 */}
       <div className="px-4 space-y-4 mt-4">
@@ -58,7 +90,7 @@ export default function SongDetailPage({ songMid, onBack }) {
       </div>
 
       {/* 音频信息 */}
-      <AudioInfoCard file={track.file} />
+      {/* <AudioInfoCard file={track.file} /> */}
 
     </div>
   );
@@ -131,21 +163,38 @@ function SongDetailSkeleton() {
 
 /* ---------------- Hero Header ---------------- */
 
-function HeroHeader({ track, coverUrl }) {
-  const [playing, setPlaying] = useState(false);
-  const [liked, setLiked] = useState(false);
+function HeroHeader({ track, coverUrl, loadSongPlayURL, playTrack, pauseTrack, isPlaying, currentTrack, isLiked, toggleLike }) {
+  const liked = isLiked(track.id);
+  const isCurrentSongPlaying = currentTrack && currentTrack.id === track.id && isPlaying;
 
-  const togglePlay = () => {
-    setPlaying((prev) => !prev);
-    console.log("play clicked");
-    // 这里之后接入底部播放器 playSong(track)
+
+  const togglePlay = async() => {
+    if (isCurrentSongPlaying) {
+      pauseTrack();
+      return;
+    }
+    const url = await loadSongPlayURL(track.mid);
+    if (!url) return;
+    playTrack({
+      id: track.id,
+      name: track.title,
+      artist: track.singer.map((s) => s.name).join(" / "),
+      cover: coverUrl,
+      url: url,
+    });
+
+    console.log("play clicked, url:", url);    
   };
 
-  const toggleLike = () => {
-    setLiked((prev) => !prev);
-    console.log("like clicked");
-    // 这里之后可以接入收藏逻辑 saveFavorite(track)
-  };
+  const handleLike = () => {
+    toggleLike({
+      id: track.id,
+      name: track.title,
+      artist: track.singer.map((s) => s.name).join(" / "),
+      duration: track.interval,
+      cover: coverUrl,
+    })
+  }
 
   return (
     <div className="relative w-full h-64 overflow-hidden">
@@ -182,7 +231,7 @@ function HeroHeader({ track, coverUrl }) {
 
       {/* 收藏按钮（心形） */}
       <button
-        onClick={toggleLike}
+        onClick={handleLike}
         className="
           absolute bottom-4 right-24
           z-30 pointer-events-auto
@@ -224,7 +273,7 @@ function HeroHeader({ track, coverUrl }) {
           transition
         "
       >
-        {playing ? (
+        {isCurrentSongPlaying ? (
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-gray-800">
             <path d="M6 5h4v14H6zm8 0h4v14h-4z" />
           </svg>

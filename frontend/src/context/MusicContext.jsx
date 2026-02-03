@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useRef, useEffect } from "react";
-import { mockTracks } from "../mock/player";
 
 const FavoriteContext = createContext();
 const MusicPlayerContext = createContext();
@@ -117,8 +116,8 @@ export function FavoriteProvider({ children }) {
 // 音乐播放器Provider
 export function MusicPlayerProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(mockTracks[0]);
-  const [playQueue, setPlayQueue] = useState(mockTracks);
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [playQueue, setPlayQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -126,9 +125,10 @@ export function MusicPlayerProvider({ children }) {
   const [showLyrics, setShowLyrics] = useState(false);
   const [repeatMode, setRepeatMode] = useState('off'); // 'off', 'all', 'one'
   const [shuffleMode, setShuffleMode] = useState(false);
-  const audioRef = useRef(new Audio(currentTrack.url));
+  const audioRef = useRef(new Audio());
 
   useEffect(() => {
+    if (!currentTrack) return;
     const audio = audioRef.current;
     audio.src = currentTrack.url;
     audio.volume = volume / 100;
@@ -217,6 +217,12 @@ export function MusicPlayerProvider({ children }) {
     setIsPlaying(true);
   };
 
+  const pauseTrack = () => {
+    const audio = audioRef.current;
+    audio.pause();
+    setIsPlaying(false);
+  }
+
   const toggleRepeat = () => {
     const modes = ['off', 'all', 'one'];
     const currentModeIndex = modes.indexOf(repeatMode);
@@ -250,10 +256,12 @@ export function MusicPlayerProvider({ children }) {
         seekTo,
         setVolume,
         playTrack,
+        pauseTrack,
         setShowLyrics,
         toggleRepeat,
         toggleShuffle,
-        formatTime
+        formatTime,
+        audioRef
       }}
     >
       {children}

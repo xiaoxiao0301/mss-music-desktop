@@ -17,7 +17,7 @@ import { useMusicPlayer } from "../context/MusicContext.jsx";
 
 export default function DesktopPlayer() {
   const [currentPage, setCurrentPage] = useState("discover");
-  const { showLyrics, setShowLyrics, currentTrack, currentTime } = useMusicPlayer();
+  const { showLyrics, setShowLyrics, currentTrack} = useMusicPlayer();
 
   return (
     <div className="w-screen h-screen bg-warm-bg text-warm-text flex flex-col overflow-hidden">
@@ -54,7 +54,6 @@ export default function DesktopPlayer() {
       {showLyrics && (
         <LyricsFullScreen
           currentTrack={currentTrack}
-          currentTime={currentTime}
           onClose={() => setShowLyrics(false)}
         />
       )}

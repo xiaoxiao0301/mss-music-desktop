@@ -1,7 +1,8 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { GetUserProfile } from "../../wailsjs/go/backend/AuthBridge";
 import { message } from "antd";
-export default function Sidebar({ currentPage, setCurrentPage }) {
+function Sidebar({ currentPage, setCurrentPage }) {
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState(null);
   const [randomAvatar] = useState(
@@ -161,3 +162,5 @@ function SectionTitle({ children, collapsed }) {
   if (collapsed) return null;
   return <p className="text-xs text-warm-subtext mt-4 mb-2">{children}</p>;
 }
+
+export default React.memo(Sidebar);
