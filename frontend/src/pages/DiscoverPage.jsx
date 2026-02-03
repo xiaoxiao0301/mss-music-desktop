@@ -211,7 +211,7 @@ export default function DiscoverPage() {
                 <div
                   key={song.id}
                   className="card p-3 rounded-xl cursor-pointer hover:bg-warm-secondary/40 transition"
-                  // onClick={() => pushPage({ type: "songDetail", data: song })}
+                  onClick={() => pushPage({ type: "songDetail", data: song.mid })}
                 >
                   <img
                     src={fixUrl(
@@ -243,7 +243,7 @@ export default function DiscoverPage() {
                 <div
                   key={album.id}
                   className="card p-3 rounded-xl cursor-pointer hover:bg-warm-secondary/40 transition"
-                  // onClick={() => pushPage({ type: "albumDetail", data: album })}
+                  onClick={() => pushPage({ type: "albumDetail", data: album.mid })}
                 >
                   <img
                     src={fixUrl(
@@ -268,6 +268,16 @@ export default function DiscoverPage() {
       {/* 歌单详情页 */}
       <SlidePage show={currentPage.type === "playlistDetail"}>
         <PlaylistDetailPage playlistId={currentPage.data} onBack={popPage} />
+      </SlidePage>
+
+      {/* 歌曲详情页 */}
+      <SlidePage show={currentPage.type === "songDetail"}>
+        <SongDetailPage songMid={currentPage.data} onBack={popPage} />
+      </SlidePage>
+
+      {/* 专辑详情页 */}
+      <SlidePage show={currentPage.type === "albumDetail"}>
+        <AlbumDetailPage albumMid={currentPage.data} onBack={popPage} />
       </SlidePage>
 
     </div>

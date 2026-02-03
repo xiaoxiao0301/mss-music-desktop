@@ -1,4 +1,5 @@
 export default function SlidePage({ show, children }) {
+  if (!show) { return null; }
   return (
     <div
       className={`

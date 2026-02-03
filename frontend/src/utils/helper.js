@@ -30,3 +30,29 @@ export function formatPlaylistAuthor(pl) {
     return nick || "未知作者";
   }
 }
+
+export const AlbumTypeMap = {
+  Single: "单曲",
+  EP: "迷你专辑",
+  Album: "专辑",
+  Live: "现场专辑",
+  Compilation: "合辑",
+  Remix: "混音专辑",
+  OST: "原声带",
+  Demo: "Demo",
+  Instrumental: "纯音乐专辑",
+  Unknown: "未知类型"
+};
+
+export function formatSize(bytes) {
+  if (!bytes || bytes <= 0) return "无";
+
+  const mb = bytes / 1024 / 1024;
+
+  // FLAC 通常很大，超过 100MB 显示为 GB 更友好
+  if (mb > 1024) {
+    return (mb / 1024).toFixed(2) + " GB";
+  }
+
+  return mb.toFixed(2) + " MB";
+}

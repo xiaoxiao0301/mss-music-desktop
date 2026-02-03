@@ -33,6 +33,12 @@ const (
 	mvCategoriesPath = "/mv/categories"
 	mvCategoriesListPath = "/mv/categories/list"
 	mvDetailPath = "/mv/detail"
+
+	albumDetailPath = "/album/detail"
+	albumSongListsPath = "/album/songs"
+
+	songDetailPath = "/song/detail"
+	songPlayPath  = "/song/play"
 )
 
 func GetRequestOTPPath() string {
@@ -121,4 +127,20 @@ func GetRecommendNewAlbumPath() string {
 
 func GetRecommendPlaylistOfficialPath() string {
 	return fmt.Sprintf("%s%s", apiBasePath, recommendPlaylistOfficialPath)
+}
+
+func GetAlbumDetailPath(albumID string) string {
+	return fmt.Sprintf("%s%s?album_id=%s", apiBasePath, albumDetailPath, albumID)
+}
+
+func GetAlbumSongListsPath(albumID string) string {
+	return fmt.Sprintf("%s%s?album_id=%s", apiBasePath, albumSongListsPath, albumID)
+}
+
+func GetSongDetailPath(songID string) string {
+	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songDetailPath, songID)
+}
+
+func GetSongPlayPath(songID string) string {
+	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songPlayPath, songID)
 }
