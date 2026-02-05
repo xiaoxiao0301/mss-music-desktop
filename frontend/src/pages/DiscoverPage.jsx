@@ -179,7 +179,7 @@ export default function DiscoverPage() {
                 <div
                   key={pl.isDaily ? pl.disstid : pl.tid}
                   className="card p-3 rounded-xl cursor-pointer hover:bg-warm-secondary/40 transition"
-                  onClick={() => pushPage({ type: "playlistDetail", data: pl.isDaily ? pl.disstid : String(pl.tid) })}
+                  onClick={() => pushPage({ type: "playlistDetail", data: pl.isDaily ? pl.disstid : String(pl.tid), initialData: pl.isDaily ? pl : null })}
                 >
                   <img
                     src={
@@ -267,7 +267,7 @@ export default function DiscoverPage() {
 
       {/* 歌单详情页 */}
       <SlidePage show={currentPage.type === "playlistDetail"}>
-        <PlaylistDetailPage playlistId={currentPage.data} onBack={popPage} />
+        <PlaylistDetailPage playlistId={currentPage.data} initialData={currentPage.initialData} onBack={popPage} />
       </SlidePage>
 
       {/* 歌曲详情页 */}

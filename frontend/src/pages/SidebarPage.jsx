@@ -1,8 +1,7 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React , { useEffect, useState } from "react";
 import { GetUserProfile } from "../../wailsjs/go/backend/AuthBridge";
 import { message } from "antd";
-function Sidebar({ currentPage, setCurrentPage }) {
+function Sidebar({ currentPage, switchRootPage }) {
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState(null);
   const [randomAvatar] = useState(
@@ -92,7 +91,6 @@ function Sidebar({ currentPage, setCurrentPage }) {
     )}
   </div>
 
-  {/* 折叠按钮（你暂时注释掉了，这里保持不动） */}
   {/* <button
     onClick={() => setCollapsed(!collapsed)}
     className="text-lg text-warm-subtext hover:text-warm-text transition"
@@ -105,22 +103,23 @@ function Sidebar({ currentPage, setCurrentPage }) {
       {/* 导航内容（可滚动） */}
       <div className="flex-1 overflow-auto pr-1">
         <SectionTitle collapsed={collapsed}>音乐馆</SectionTitle>
-        <NavItem label="推荐" active={currentPage === "discover"} collapsed={collapsed} onClick={() => setCurrentPage("discover")} />
-        <NavItem label="歌单" active={currentPage === "playlist"} collapsed={collapsed} onClick={() => setCurrentPage("playlist")} />
-        <NavItem label="歌手" active={currentPage === "artist"} collapsed={collapsed} onClick={() => setCurrentPage("artist")} />
-        <NavItem label="排行榜" active={currentPage === "rank"} collapsed={collapsed} onClick={() => setCurrentPage("rank")} />
-        <NavItem label="电台" active={currentPage === "radio"} collapsed={collapsed} onClick={() => setCurrentPage("radio")} />
-        <NavItem label="MV" active={currentPage === "mv"} collapsed={collapsed} onClick={() => setCurrentPage("mv")} />
+        <NavItem label="推荐" active={currentPage === "home"} collapsed={collapsed} onClick={() => switchRootPage("home")} />
+        <NavItem label="歌单" active={currentPage === "playlist"} collapsed={collapsed} onClick={() => switchRootPage("playlistCategory")} />
+        <NavItem label="歌手" active={currentPage === "artist"} collapsed={collapsed} onClick={() => switchRootPage("artist")} />
+        <NavItem label="排行榜" active={currentPage === "rank"} collapsed={collapsed} onClick={() => switchRootPage("rank")} />
+        <NavItem label="电台" active={currentPage === "radio"} collapsed={collapsed} onClick={() => switchRootPage("radio")} />
+        <NavItem label="MV" active={currentPage === "mv"} collapsed={collapsed} onClick={() => switchRootPage("mv")} />
 
         <SectionTitle collapsed={collapsed}>我的音乐</SectionTitle>
-        <NavItem label="喜欢的音乐" active={currentPage === "fav"} collapsed={collapsed} onClick={() => setCurrentPage("fav")} />
-        <NavItem label="收藏的歌单" active={currentPage === "fav-playlist"} collapsed={collapsed} onClick={() => setCurrentPage("fav-playlist")} />
-        <NavItem label="收藏的歌手" active={currentPage === "fav-artist"} collapsed={collapsed} onClick={() => setCurrentPage("fav-artist")} />
-        <NavItem label="最近播放" active={currentPage === "recent"} collapsed={collapsed} onClick={() => setCurrentPage("recent")} />
+        <NavItem label="喜欢的音乐" active={currentPage === "fav"} collapsed={collapsed} onClick={() => switchRootPage("fav")} />
+        <NavItem label="收藏的歌单" active={currentPage === "fav-playlist"} collapsed={collapsed} onClick={() => switchRootPage("fav-playlist")} />
+        <NavItem label="收藏的歌手" active={currentPage === "fav-artist"} collapsed={collapsed} onClick={() => switchRootPage("fav-artist")} />
+        <NavItem label="收藏的专辑" active={currentPage === "fav-album"} collapsed={collapsed} onClick={() => switchRootPage("fav-album")} />
+        <NavItem label="最近播放" active={currentPage === "recent"} collapsed={collapsed} onClick={() => switchRootPage("recent")} />
 
         <SectionTitle collapsed={collapsed}>其他</SectionTitle>
-        <NavItem label="本地与下载" active={currentPage === "local"} collapsed={collapsed} onClick={() => setCurrentPage("local")} />
-        <NavItem label="设置" active={currentPage === "settings"} collapsed={collapsed} onClick={() => setCurrentPage("settings")} />
+        <NavItem label="本地与下载" active={currentPage === "local"} collapsed={collapsed} onClick={() => switchRootPage("local")} />
+        <NavItem label="设置" active={currentPage === "settings"} collapsed={collapsed} onClick={() => switchRootPage("settings")} />
       </div>
 
       {/* 底部标语 */}

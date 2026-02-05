@@ -3,12 +3,17 @@ import SlidePage from "../../components/SlidePage";
 import PlaylistDetailPage from "./PlaylistDetailPage";
 import { GetPlaylistTypes, GetPlaylistCategoriesList } from "../../../wailsjs/go/backend/PlaylistBridge";
 import { message } from "antd";
-import { fixUrl } from "../../utils/helper";
+import { fixUrl, normalizeJson } from "../../utils/helper";
 
 const pageSize = 20;
 
 export default function PlaylistCategoryPage() {
-  const [currentPlaylistId, setCurrentPlaylistId] = useState(null);
+  const [pageStack, setPageStack] = useState([{ type: "home" }]);
+  const currentPage = pageStack[pageStack.length - 1];
+  const pushPage = (page) => setPageStack((prev) => [...prev, page]);
+  const popPage = () => setPageStack((prev) => prev.slice(0, -1));
+
+  // const [currentPlaylistId, setCurrentPlaylistId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState({ id: 10000000, name: "全部" } );
   const [playlists, setPlaylists] = useState([]);
@@ -28,7 +33,7 @@ export default function PlaylistCategoryPage() {
   const loadCategories = async () => {
     try {
         const res = await GetPlaylistTypes();
-        const data = typeof res === "string" ? JSON.parse(res) : res;
+        const data = normalizeJson(res);
 
         if (data.code !== 20000) {
           message.error("获取歌单分类失败");
@@ -51,7 +56,7 @@ export default function PlaylistCategoryPage() {
   const loadCategoriesLists = async (categoryId) => {
     try {
         const res = await GetPlaylistCategoriesList(categoryId, page);
-        const data = typeof res === "string" ? JSON.parse(res) : res;
+        const data = normalizeJson(res);
 
         if (data.code !== 20000) {
           message.error("获取歌单列表失败");
@@ -103,7 +108,7 @@ export default function PlaylistCategoryPage() {
           {playlists.map(pl => (
             <div
               key={pl.dissid}
-              onClick={() => setCurrentPlaylistId(pl.dissid)}
+              onClick={() => pushPage({ type: "playlistDetail", playlistId: pl.dissid, initialData: null })}
               className="card p-4 cursor-pointer hover:bg-warm-secondary/40 transition"
             >
               <img
@@ -170,10 +175,11 @@ export default function PlaylistCategoryPage() {
       )}
 
       {/* ⭐ 修改点 3：SlidePage 必须放在这里（覆盖顶部栏 + 列表） */}
-      <SlidePage show={!!currentPlaylistId}>
+      <SlidePage show={currentPage.type === "playlistDetail"}>
         <PlaylistDetailPage
-          playlistId={currentPlaylistId}
-          onBack={() => setCurrentPlaylistId(null)}
+          playlistId={currentPage.playlistId}
+          initialData={currentPage.initialData}
+          onBack={popPage}
         />
       </SlidePage>
 

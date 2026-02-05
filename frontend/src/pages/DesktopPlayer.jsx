@@ -1,23 +1,18 @@
-import { useState } from "react";
-
 import SiderbarPage from "./SidebarPage.jsx";
-import DiscoverPage from "./DiscoverPage.jsx";
-import ArtistPage from "./artist/ArtistPage.jsx";
-import PlaylistCategoryPage from "./playlist/PlaylistCategoryPage.jsx";
-import RankPage from "./rank/RankPage.jsx";
-import RadioPage from "./radio/RadioPage.jsx";
-import LikedPage from "./liked/LikedPage.jsx";
 import DesktopPlayerBar from "../components/DesktopPlayerBar.jsx";
 import LyricsFullScreen from "../components/LyricsFullScreen.jsx";
-import FavoritePlaylistsPage from "./liked/FavoritePlaylistsPage.jsx";
-import FavoriteArtistsPage from "./liked/FavoriteArtistsPage.jsx";
-import RecentPlaysPage from "./recent/RecentPlaysPage.jsx";
-import MVPage from "./mvs/MVPage.jsx";
+
 import { useMusicPlayer } from "../context/MusicContext.jsx";
+import { usePageStack } from "../router/usePageStack.jsx";
+import { PageRouter} from "../router/PageRouter.jsx";
 
 export default function DesktopPlayer() {
-  const [currentPage, setCurrentPage] = useState("discover");
   const { showLyrics, setShowLyrics, currentTrack} = useMusicPlayer();
+  const { stack, current, push, pop } = usePageStack();
+
+  const switchRootPage = (pageType) => {
+    push({ type: pageType });
+  }
 
   return (
     <div className="w-screen h-screen bg-warm-bg text-warm-text flex flex-col overflow-hidden">
@@ -28,22 +23,18 @@ export default function DesktopPlayer() {
       <div className="flex flex-1 overflow-hidden">
 
         <SiderbarPage
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
+            currentPage={current.type}
+            switchRootPage={switchRootPage}
         />
 
         {/* 中间内容区 */}
         <main className="flex-1 p-4 overflow-auto">
-            {currentPage === "discover" && <DiscoverPage />}
-            {currentPage === "playlist" && <PlaylistCategoryPage />}
-            {currentPage === "artist" && <ArtistPage />}
-            {currentPage === "rank" && <RankPage />}
-            {currentPage === "radio" && <RadioPage />}
-            {currentPage === "fav" && <LikedPage />}
-            {currentPage === "fav-playlist" && <FavoritePlaylistsPage />}
-            {currentPage === "fav-artist" && <FavoriteArtistsPage />}
-            {currentPage === "recent" && <RecentPlaysPage />}
-            {currentPage === "mv" && <MVPage />}
+            <PageRouter
+              stack={stack}
+              current={current}
+              push={push}
+              pop={pop}
+            />
         </main>
 
       </div>

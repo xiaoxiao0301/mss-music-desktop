@@ -16,6 +16,7 @@ export function FavoriteProvider({ children }) {
   const toggleLike = (song) => {
     const simpleSong = {
       id: song.id,
+      mid: song.mid,
       name: song.name,
       artist: song.artist,
       duration: song.duration,
@@ -63,6 +64,7 @@ export function FavoriteProvider({ children }) {
   const addRecentPlay = (song) => {
     const simpleSong = {
       id: song.id,
+      mid: song.mid,
       name: song.name,
       artist: song.artist,
       duration: song.duration,

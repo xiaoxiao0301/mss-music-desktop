@@ -39,6 +39,7 @@ const (
 
 	songDetailPath = "/song/detail"
 	songPlayPath  = "/song/play"
+	songLyricsPath = "/song/lyrics"
 )
 
 func GetRequestOTPPath() string {
@@ -143,4 +144,8 @@ func GetSongDetailPath(songID string) string {
 
 func GetSongPlayPath(songID string) string {
 	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songPlayPath, songID)
+}
+
+func GetSongLyricsPath(songID string) string {
+	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songLyricsPath, songID)
 }

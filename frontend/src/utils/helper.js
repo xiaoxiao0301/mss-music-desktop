@@ -56,3 +56,44 @@ export function formatSize(bytes) {
 
   return mb.toFixed(2) + " MB";
 }
+
+
+export function parseLRC(lrcText) {
+  if (!lrcText) return [];
+
+  const lines = lrcText.split("\n");
+  const result = [];
+
+  const timeReg = /\[(\d{2}):(\d{2}\.\d{2})]/;
+
+  for (const line of lines) {
+    const match = timeReg.exec(line);
+    if (!match) continue;
+
+    const min = parseInt(match[1]);
+    const sec = parseFloat(match[2]);
+    const time = min * 60 + sec;
+
+    const text = line.replace(timeReg, "").trim();
+
+    result.push({ time, text });
+  }
+
+  return result;
+}
+
+export function formatNumber(num) {
+  if (!num) return 0;
+  if (num > 10000) return (num / 10000).toFixed(1) + "万";
+  return num;
+}
+
+export function formatDate(ts) {
+  if (!ts) return "";
+  const d = new Date(ts * 1000);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+export function getCoverUrl(albumID, size = 300) {
+  return `https://y.qq.com/music/photo_new/T002R300x300M000${albumID}.jpg`;
+}
