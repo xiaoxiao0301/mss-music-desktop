@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { message } from "antd";
-import { GetSongDetail, GetSongPlayURL, GetSongLyrics } from "../../../wailsjs/go/backend/SongBridge";
+import { GetSongDetailAndLyricsAndPlayURL } from "../../../wailsjs/go/backend/SongBridge";
 import { formatSize, formatTime, normalizeJson, parseLRC } from "../../utils/helper";
 import TopNavBar from "../../components/TopNavBar";
 import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
@@ -8,73 +8,44 @@ import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
 export default function SongDetailPage({ songMid, onBack }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [playURL, setPlayURL] = useState(null);
   const { isPlaying, currentTrack, playTrack, pauseTrack } = useMusicPlayer(); 
   const { isLiked, toggleLike } = useFavorite();
 
   useEffect(() => {
     if (!songMid) return;
-    loadSongDetailInformation(songMid);
+    loadSongDetailAndPlayURLandLyrics(songMid);
   }, [songMid]);
-  
-  const loadSongDetailInformation = async (mid) => {
+
+  const loadSongDetailAndPlayURLandLyrics = async (mid) => {
     try {
-      const [songDetailRes, songLyricRes] = await Promise.all([
-        GetSongDetail(mid),
-        GetSongLyrics(mid)
-      ]);
-      
-      const songDetailData = normalizeJson(songDetailRes);
-      const songLyricData = normalizeJson(songLyricRes);
-
-      if (songDetailData.code !== 20000) {
-        message.error("获取歌曲详情失败");
+      const res = await GetSongDetailAndLyricsAndPlayURL(mid);
+      const data = normalizeJson(res);
+      console.log("Fetched song detail, lyrics and play URL:", data); 
+      if (data.code !== 20000) {
+        message.error("获取歌曲信息失败");
         return;
       }
-      console.log("Fetched song detail:", songDetailData);
-
-      if (songLyricData.code !== 20000) {
-        message.error("获取歌曲歌词失败");
-        return;
+      console.log("Fetched song detail, lyrics and play URL:", data);
+      const songPlayURLData = data.data.playURL;
+      if (songPlayURLData.url) {
+        setPlayURL(songPlayURLData.url);
       }
-      if (songLyricData.data == null || !songLyricData.data.lyric) {
-        message.error("歌曲暂无歌词");
-        return;
-      }
-      console.log("Fetched song lyrics:", songLyricData);
-      const lyricsLines = parseLRC(songLyricData.data.lyric) || [];
+      const songLyricData = data.data.lyric;
+      const lyricsLines = songLyricData?.lyric ? parseLRC(songLyricData.lyric) : [];
+      const transLyricsLines = songLyricData?.trans ? parseLRC(songLyricData.trans) : [];
       setDetail({
-        ...songDetailData.data,
+        ...data.data.detail,
         lyrics: lyricsLines,
-        rawLyricsLines: songLyricData.data.lyric,
+        transLyrics: transLyricsLines,
+        rawLyricsLines: songLyricData?.lyric || "",
+        rawTransLyricsLines: songLyricData?.trans || "",
       });
     } catch (err) {
       console.log(err); 
-      message.error("加载歌曲信息失败");
+      message.error("加载总歌曲信息失败");
     } finally {
       setLoading(false);
-    }
-      
-  }
-
-  const loadSongPlayURL = async (mid) => {
-    try {
-      const songPlayURLRes = await GetSongPlayURL(mid);
-      const songPlayURLData = normalizeJson(songPlayURLRes);
-
-      if (songPlayURLData.code !== 20000) {
-        message.error("获取歌曲播放地址失败");
-        return null;
-      }
-      if (songPlayURLData.data == null || !songPlayURLData.data.url) {
-        message.error("歌曲暂无播放地址");
-        return null;
-      }
-      console.log("Fetched song play URL:", songPlayURLData);
-      return songPlayURLData.data.url;
-    } catch (err) {
-      console.log(err); 
-      message.error("加载歌曲播放地址失败");
-      return null;
     }
   }
 
@@ -97,7 +68,7 @@ export default function SongDetailPage({ songMid, onBack }) {
       <HeroHeader 
         track={track} 
         coverUrl={coverUrl}  
-        loadSongPlayURL={loadSongPlayURL} 
+        songPlayURL={playURL}
         playTrack={playTrack} 
         pauseTrack={pauseTrack} 
         isPlaying={isPlaying}
@@ -105,6 +76,7 @@ export default function SongDetailPage({ songMid, onBack }) {
         isLiked={isLiked} 
         toggleLike={toggleLike}
         lyrics={detail.lyrics}
+        transLyrics={detail.transLyrics}
       />
 
       {/* 信息卡片 */}
@@ -189,7 +161,7 @@ function SongDetailSkeleton() {
 
 /* ---------------- Hero Header ---------------- */
 
-function HeroHeader({ track, coverUrl, loadSongPlayURL, playTrack, pauseTrack, isPlaying, currentTrack, isLiked, toggleLike, lyrics }) {
+function HeroHeader({ track, coverUrl, songPlayURL, playTrack, pauseTrack, isPlaying, currentTrack, isLiked, toggleLike, lyrics, transLyrics }) {
   const liked = isLiked(track.id);
   const isCurrentSongPlaying = currentTrack && currentTrack.id === track.id && isPlaying;
 
@@ -199,20 +171,20 @@ function HeroHeader({ track, coverUrl, loadSongPlayURL, playTrack, pauseTrack, i
       pauseTrack();
       return;
     }
-    const url = await loadSongPlayURL(track.mid);
-    if (!url) return;
+    if (!songPlayURL) return;
     playTrack({
       id: track.id,
       mid: track.mid,
       name: track.title,
       artist: track.singer.map((s) => s.name).join(" / "),
       cover: coverUrl,
-      url: url,
+      url: songPlayURL,
       duration: track.interval,
-      lyrics: lyrics
+      lyrics: lyrics,
+      transLyrics: transLyrics
     });
 
-    console.log("play clicked, url:", url);    
+    console.log("play clicked, url:", songPlayURL);    
   };
 
   const handleLike = () => {

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { message } from "antd";
-import { GetAlbumDetail, GetAlbumSongLists } from "../../../wailsjs/go/backend/AlbumBridge";
-import { AlbumTypeMap } from "../../utils/helper";
+import { GetAlbumDetailAndSongLists } from "../../../wailsjs/go/backend/AlbumBridge";
+import { AlbumTypeMap, normalizeJson } from "../../utils/helper";
 import { getCoverUrl} from "../../utils/helper";
 import TopNavBar from "../../components/TopNavBar";
 import SongListDesktop from "../../components/SongList";
@@ -13,41 +13,32 @@ export default function AlbumDetailPage({ albumMid, onBack }) {
   const [loading, setLoading] = useState(true);
 
   const { playTrack } = useMusicPlayer();
-    const { isLiked, toggleLike } = useFavorite();
+  const { isLiked, toggleLike } = useFavorite();
 
   useEffect(() => {
     if (!albumMid) return;
     setLoading(true);
-    loadAlbumDetail(albumMid);
+    loadAlbumDetailAndSongLists(albumMid);
   }, [albumMid]);
 
-  const loadAlbumDetail = async (mid) => {
-    try {
-      const res = await GetAlbumDetail(mid);
-      const data = typeof res === "string" ? JSON.parse(res) : res;
-
-      if (data.code !== 20000) {
-        message.error("获取专辑详情失败");
-        return;
+  const loadAlbumDetailAndSongLists = async (mid) => {
+      try {
+          const res = await GetAlbumDetailAndSongLists(mid);
+          const data = normalizeJson(res);
+          if (data.code !== 20000) {
+              message.error("加载专辑信息失败");
+              return;
+          }
+          console.log("Fetched album detail and songlists:", data);
+          setDetail(data.data.albumDetail);
+          setSongs(data.data.songLists.list || []);
+      } catch (err) {
+        console.log(err); 
+        message.error("加载专辑信息失败");
+      } finally {
+        setLoading(false);
       }
-
-      const songRes = await GetAlbumSongLists(mid);
-      const songData = typeof songRes === "string" ? JSON.parse(songRes) : songRes;
-
-      if (songData.code !== 20000) {
-        message.error("获取专辑歌曲失败");
-        return;
-      }
-
-      setDetail(data.data);
-      setSongs(songData.data.list);
-    } catch (err) {
-      console.error(err);
-      message.error("加载专辑详情失败");
-    } finally {
-      setLoading(false);
     }
-  };
 
   const normalizedSongs = useMemo(() => {
     if (!detail || !songs.length) return [];
@@ -112,11 +103,11 @@ export default function AlbumDetailPage({ albumMid, onBack }) {
         </div>
 
         {/* 简介卡片 */}
-        {detail.desc && (
+        {detail.basicInfo.desc && (
           <div className="bg-white rounded-xl shadow-sm p-4 border border-[#EDE7E2]">
             <p className="font-bold text-lg mb-2">专辑简介</p>
             <p className="text-sm text-[#6B6B6B] leading-relaxed whitespace-pre-line">
-              {detail.desc}
+              {detail.basicInfo.desc}
             </p>
           </div>
         )}

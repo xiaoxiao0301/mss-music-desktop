@@ -33,3 +33,11 @@ func (s *SongBridge) GetSongLyrics(songId string) (string, error) {
 	}
 	return string(resp), nil
 }
+
+func (s *SongBridge) GetSongDetailAndLyricsAndPlayURL(songId string) (string, error) {
+	resp, err := s.apiClient.Get(GetSongDetailAndLyricsAndPlayURLPath(songId))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

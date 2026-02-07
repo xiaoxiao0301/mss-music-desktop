@@ -25,3 +25,11 @@ func (a *AlbumBridge) GetAlbumSongLists(albumId string) (string, error) {
 	}
 	return string(resp), nil
 }
+
+func (a *AlbumBridge) GetAlbumDetailAndSongLists(albumId string) (string, error) {
+	resp, err := a.apiClient.Get(GetAlbumDetailAndSongListsPath(albumId))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

@@ -36,10 +36,12 @@ const (
 
 	albumDetailPath = "/album/detail"
 	albumSongListsPath = "/album/songs"
+	albumDetailAndSongListsPath = "/album/detail-songs"
 
 	songDetailPath = "/song/detail"
 	songPlayPath  = "/song/play"
 	songLyricsPath = "/song/lyrics"
+	songDetailAndLyricsAndPlayURLPath = "/song/detail-lyrics-playurl"
 )
 
 func GetRequestOTPPath() string {
@@ -148,4 +150,12 @@ func GetSongPlayPath(songID string) string {
 
 func GetSongLyricsPath(songID string) string {
 	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songLyricsPath, songID)
+}
+
+func GetSongDetailAndLyricsAndPlayURLPath(songID string) string {
+	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songDetailAndLyricsAndPlayURLPath, songID)
+}
+
+func GetAlbumDetailAndSongListsPath(albumID string) string {
+	return fmt.Sprintf("%s%s?album_id=%s", apiBasePath, albumDetailAndSongListsPath, albumID)
 }
