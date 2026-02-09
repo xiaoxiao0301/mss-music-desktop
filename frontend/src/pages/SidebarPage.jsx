@@ -1,7 +1,9 @@
 import React , { useEffect, useState } from "react";
-import { GetUserProfile } from "../../wailsjs/go/backend/AuthBridge";
+import { useNavigate } from "react-router-dom";
+import { GetUserProfile, Logout } from "../../wailsjs/go/backend/AuthBridge";
 import { message } from "antd";
 function Sidebar({ currentPage, switchRootPage }) {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState(null);
   const [randomAvatar] = useState(
@@ -36,12 +38,20 @@ function Sidebar({ currentPage, switchRootPage }) {
     }
   }
 
-  const handleLogout = () => { 
-    localStorage.removeItem("userID"); 
-    setProfile(null); 
-    message.success("已退出登录"); 
-    // 你可以根据需要跳转到登录页 
-    // setCurrentPage("login"); 
+  const handleLogout = async () => {
+    try {
+      await Logout();
+      localStorage.removeItem("userID");
+      setProfile(null);
+      message.success("已退出登录");
+      // 延迟一小段时间再跳转，让用户能看到退出成功提示
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
+    } catch (err) {
+      console.error("退出登录失败:", err);
+      message.error("退出登录失败");
+    }
   };
 
   useEffect(() => {

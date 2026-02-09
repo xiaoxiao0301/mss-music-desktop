@@ -23,6 +23,14 @@ export default function LoginPage() {
 
   const navigate = useNavigate()
 
+  // 检查是否已登录，如果已登录直接跳转到首页
+  useEffect(() => {
+    const userID = localStorage.getItem("userID")
+    if (userID) {
+      navigate("/home")
+    }
+  }, [])
+
   // 验证码倒计时
   useEffect(() => {
     if (cooldown > 0) {

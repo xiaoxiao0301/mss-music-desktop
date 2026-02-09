@@ -15,7 +15,8 @@ const (
 	authPath    = "/auth/request-otp"
 	authVerifyPath  = "/auth/verify-otp"
 	authRefreshPath = "/auth/refresh"
-	authMePath = "/user/me"	
+	authMePath = "/user/me"
+	authLogoutPath = "/user/logout"
 
 	rankingListPath = "/ranking/list"
 	rankingDetailPath = "/ranking/detail"
@@ -63,6 +64,10 @@ func GetAuthRefreshPath() string {
 
 func GetAuthMePath() string {
 	return fmt.Sprintf("%s%s", apiBasePath, authMePath)
+}
+
+func GetAuthLogoutPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, authLogoutPath)
 }
 
 func GetRankingListPath() string {
