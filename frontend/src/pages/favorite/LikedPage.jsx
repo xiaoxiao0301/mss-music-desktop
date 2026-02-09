@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { useFavorite } from "../../context/MusicContext";
+import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 import { GetFavoriteSongs } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { GetSongDetail } from "../../../wailsjs/go/backend/SongBridge";
 import { SkeletonList } from "../../components/SkeletonCard";
+import SongListDesktop from "../../components/SongList";
+import { getCoverUrl } from "../../utils/helper";
 
 export default function LikedPage({ pushPage }) {
-  const { toggleLike } = useFavorite();
+  const { isLiked, toggleLike } = useFavorite();
+  const { playTrack } = useMusicPlayer();
   const [loading, setLoading] = useState(true);
   const [songs, setSongs] = useState([]);
 
@@ -30,8 +33,10 @@ export default function LikedPage({ pushPage }) {
               mid: track.mid,
               name: track.title,
               artist: track.singer?.map(s => s.name).join("/") || "未知歌手",
+              albumname: track.album?.name || "未知专辑",
+              albummid: track.album?.mid || "",
               duration: track.interval,
-              cover: track.album?.mid ? `https://y.gtimg.cn/music/photo_new/T002R300x300M000${track.album.mid}.jpg` : ""
+              cover: track.album?.mid ? getCoverUrl(track.album.mid) : ""
             };
           }
         } catch (error) {
@@ -51,7 +56,7 @@ export default function LikedPage({ pushPage }) {
 
   return (
     <div className="flex flex-col h-full overflow-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">❤️ 喜欢的音乐</h1>
+      <h1 className="text-2xl font-bold mb-4">喜欢的音乐</h1>
 
       {loading && <SkeletonList count={8} />}
 
@@ -61,42 +66,19 @@ export default function LikedPage({ pushPage }) {
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
-        {songs.map(song => (
-          <div
-            key={song.id}
-            className="card p-3 flex items-center gap-4 hover:bg-warm-secondary/40 transition rounded-xl"
-          >
-            <img
-              src={song.cover}
-              className="w-14 h-14 rounded-lg object-cover shadow"
-            />
-
-            <div className="flex-1">
-              <p className="font-bold">{song.name}</p>
-              <p className="text-sm text-warm-subtext">{song.artist}</p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => pushPage({ type: "songDetail", songMid: song.mid })}
-                className="text-sm px-3 py-1 rounded bg-warm-secondary/60 text-warm-text hover:bg-warm-secondary transition"
-              >
-                详情
-              </button>
-              <button
-                onClick={() => {
-                  toggleLike(song);
-                  setSongs(songs.filter(s => s.mid !== song.mid));
-                }}
-                className="text-xl text-red-500 hover:scale-110 transition"
-              >
-                ❤️
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {!loading && songs.length > 0 && (
+        <SongListDesktop
+          songs={songs}
+          onPlay={(song) => playTrack(song, songs)}
+          onLike={(song) => {
+            toggleLike(song);
+            setSongs(songs.filter(s => s.mid !== song.mid));
+          }}
+          likedChecker={(mid) => isLiked(mid)}
+          onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+          onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
+        />
+      )}
     </div>
   );
 }

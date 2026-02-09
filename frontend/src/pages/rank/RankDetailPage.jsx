@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { GetRankingDetail } from "../../../wailsjs/go/backend/RankingBridge";
 import TopNavBar from "../../components/TopNavBar";
+import SongListDesktop from "../../components/SongList";
 import { message } from "antd";
 import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 
-export default function RankDetailPage({ topId, onBack }) {
+export default function RankDetailPage({ topId, onBack, pushPage }) {
   const [rankData, setRankData] = useState(null);
   const [showFullIntro, setShowFullIntro] = useState(false);
   const [page, setPage] = useState(1);
@@ -80,6 +81,21 @@ export default function RankDetailPage({ topId, onBack }) {
     target.addEventListener("scroll", handleScroll, { passive: true });
     return () => target.removeEventListener("scroll", handleScroll);
   }, [hasMore, loadingMore, topId]);
+
+  // 格式化为 SongListDesktop 需要的格式
+  const normalizedSongs = useMemo(() => {
+    if (!rankData?.song) return [];
+    return rankData.song.map((s) => ({
+      id: s.songId,
+      mid: s.songMid,
+      name: s.title,
+      artist: s.singerName,
+      albumname: s.albumName,
+      albummid: s.albumMid,
+      duration: s.interval,
+      cover: s.cover || `https://y.gtimg.cn/music/photo_new/T002R300x300M000${s.albumMid}.jpg`,
+    }));
+  }, [rankData]);
 
 
   if (initialLoading) {
@@ -164,101 +180,14 @@ export default function RankDetailPage({ topId, onBack }) {
           共 {totalNum} 首歌曲
         </p>
 
-        {song.map((s) => {
-          const coverUrl =
-            s.cover ||
-            `https://y.gtimg.cn/music/photo_new/T002R300x300M000${s.albumMid}.jpg`;
-
-          return (
-            <div
-              key={s.songId}
-              className="grid grid-cols-[80px_1fr_120px] items-center py-2 border-b hover:bg-gray-100 transition cursor-pointer gap-3"
-            >
-              {/* 左侧：排名 + 封面 */}
-              <div className="flex items-center gap-2">
-                <div className="w-6 text-right text-lg font-semibold text-gray-700">
-                  {s.rank}
-                </div>
-                <img
-                  src={coverUrl}
-                  className="w-10 h-10 rounded-md object-cover shadow-sm"
-                />
-              </div>
-
-              {/* 中间：歌曲名 + 歌手名 */}
-              <div className="flex flex-col truncate">
-                <p className="font-medium text-[15px] truncate">{s.title}</p>
-                <p className="text-xs text-gray-500 truncate">{s.singerName}</p>
-              </div>
-
-              {/* 右侧：三个按钮 */}
-              <div className="flex items-center justify-between text-gray-600">
-                {/* 播放 */}
-                <button
-                  className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const songData = {
-                      id: s.songId,
-                      mid: s.songMid,
-                      name: s.title,
-                      artist: s.singerName,
-                      albumname: s.albumName,
-                      albummid: s.albumMid,
-                      duration: s.interval,
-                      cover: coverUrl
-                    };
-                    playTrack(songData);
-                  }}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="12" fill="currentColor" opacity="0.15" />
-                    <path d="M10 8v8l6-4z" fill="currentColor" />
-                  </svg>
-                </button>
-
-                {/* 收藏 */}
-                <button
-                  className={`w-8 h-8 flex items-center justify-center hover:text-warm-primary ${
-                    isLiked(s.songMid) ? "text-warm-primary" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const songData = {
-                      id: s.songId,
-                      mid: s.songMid,
-                      name: s.title,
-                      artist: s.singerName,
-                      albumname: s.albumName,
-                      albummid: s.albumMid,
-                      duration: s.interval,
-                      cover: coverUrl
-                    };
-                    toggleLike(songData);
-                  }}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill={isLiked(s.songMid) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z" />
-                  </svg>
-                </button>
-
-                {/* 添加 */}
-                <button
-                  className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log("加入歌单:", s.songId);
-                  }}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </div>
-
-            </div>
-          );
-        })}
+        <SongListDesktop
+          songs={normalizedSongs}
+          onPlay={(song) => playTrack(song, normalizedSongs)}
+          onLike={(song) => toggleLike(song)}
+          likedChecker={(id) => isLiked(id)}
+          onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+          onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
+        />
       </div>
 
       {loadingMore && (

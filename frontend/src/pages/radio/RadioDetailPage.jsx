@@ -6,7 +6,7 @@ import { message } from "antd";
 import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 import { getCoverUrl } from "../../utils/helper";
 
-export default function RadioDetailPage({ radio, onBack }) {
+export default function RadioDetailPage({ radio, onBack, pushPage }) {
   const [songList, setSongList] = useState(null);
   const { isLiked, toggleLike } = useFavorite();
   const { playTrack } = useMusicPlayer();
@@ -86,6 +86,8 @@ export default function RadioDetailPage({ radio, onBack }) {
             onPlay={(song) => playTrack(song, normalizedSongs)}
             onLike={(song) => toggleLike(song)}
             likedChecker={(id) => isLiked(id)}
+            onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+            onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
           />
         )}
       </div>

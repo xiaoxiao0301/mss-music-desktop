@@ -12,6 +12,20 @@ export function FavoriteProvider({ children }) {
   const [favoriteArtists, setFavoriteArtists] = useState([]);
   const [recentPlays, setRecentPlays] = useState([]);
 
+  // 统一处理认证错误
+  const handleAuthError = (error) => {
+    const errorMsg = String(error || "");
+    if (errorMsg.includes("not logged in") || errorMsg.includes("refresh failed")) {
+      localStorage.removeItem("userID");
+      message.warning("登录已过期，请重新登录");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+      return true;
+    }
+    return false;
+  };
+
   // 初始化时从后端加载收藏的歌曲MID列表
   useEffect(() => {
     const loadFavoriteSongs = async () => {
@@ -24,9 +38,7 @@ export function FavoriteProvider({ children }) {
         const mids = await GetFavoriteSongs();
         setLikedSongMids(mids || []);
       } catch (error) {
-        const message = String(error || "");
-        if (message.includes("not logged in")) {
-          localStorage.removeItem("userID");
+        if (handleAuthError(error)) {
           setLikedSongMids([]);
           return;
         }
@@ -63,6 +75,7 @@ export function FavoriteProvider({ children }) {
         setLikedSongs(likedSongs.filter(s => s.mid !== song.mid));
         message.success("已取消收藏");
       } catch (error) {
+        if (handleAuthError(error)) return;
         console.error("Failed to remove favorite:", error);
         message.error("取消收藏失败");
       }
@@ -74,6 +87,7 @@ export function FavoriteProvider({ children }) {
         setLikedSongs([...likedSongs, simpleSong]);
         message.success("已收藏");
       } catch (error) {
+        if (handleAuthError(error)) return;
         console.error("Failed to add favorite:", error);
         message.error("收藏失败");
       }

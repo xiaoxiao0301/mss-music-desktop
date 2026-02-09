@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SiderbarPage from "./SidebarPage.jsx";
 import DesktopPlayerBar from "../components/DesktopPlayerBar.jsx";
 import LyricsFullScreen from "../components/LyricsFullScreen.jsx";
@@ -7,8 +9,17 @@ import { usePageStack } from "../router/usePageStack.jsx";
 import { PageRouter} from "../router/PageRouter.jsx";
 
 export default function DesktopPlayer() {
+  const navigate = useNavigate();
   const { showLyrics, setShowLyrics, currentTrack} = useMusicPlayer();
   const { stack, current, push, pop } = usePageStack();
+
+  // 检查登录状态（仅在组件初始化时检查一次）
+  useEffect(() => {
+    const userID = localStorage.getItem("userID");
+    if (!userID) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const switchRootPage = (pageType) => {
     push({ type: pageType });

@@ -23,7 +23,7 @@ export default function SongListDesktop({
       {/* 歌曲列表 */}
       <div className="mt-1">
         {songs.map((song, index) => {
-          const liked = likedChecker?.(song.id);
+          const liked = likedChecker?.(song.mid);
 
           return (
             <div

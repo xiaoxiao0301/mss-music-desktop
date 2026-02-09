@@ -196,6 +196,8 @@ export default function AlbumDetailPage({ albumMid, onBack, pushPage }) {
             onPlay={(song) => playTrack(song, normalizedSongs)}
             onLike={(song) => toggleLike(song)}
             likedChecker={(id) => isLiked(id)}
+            onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+            onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
           />
         </div>
       </div>
