@@ -49,3 +49,11 @@ func (rb *RecommendBridge) GetOfficialPlaylistRecommendations() (string, error) 
 	}
 	return string(resp), nil
 }
+
+func (rb *RecommendBridge) GetAllRecommendations() (string, error) {
+	resp, err := rb.apiClinet.Get(GetRecommendAllPath())
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

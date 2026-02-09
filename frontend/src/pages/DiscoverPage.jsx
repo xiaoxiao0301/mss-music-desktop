@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
 import { message } from "antd";
 import {
-  GetRecommendBanners,
-  GetDailyRecommendations,
-  GetNewSongRecommendations,
-  GetNewAlbumRecommendations,
-  GetOfficialPlaylistRecommendations
+  GetAllRecommendations
 } from "../../wailsjs/go/backend/RecommendBridge";
 import { fixUrl, formatPlaylistAuthor, normalizeJson } from "../utils/helper";
 import SlidePage from "../components/SlidePage";
@@ -41,53 +37,30 @@ export default function DiscoverPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 一次性加载所有数据
   useEffect(() => {
-    async function loadAll() {
+    async function loadAllInformation() {
       try {
-        // const [b, d, s, a] = await Promise.all([
-        //   GetRecommendBanners(),
-        //   GetDailyRecommendations(),
-        //   GetNewSongRecommendations(),
-        //   GetNewAlbumRecommendations()
-        // ]);
-        const [b, d, r, s, a] = await Promise.all([
-          GetRecommendBanners(),
-          GetDailyRecommendations(),
-          GetOfficialPlaylistRecommendations(),
-          GetNewSongRecommendations(),
-          GetNewAlbumRecommendations()
-        ]);
+        const result = await GetAllRecommendations()
+        const res = normalizeJson(result)
+        if (res.code !== 20000) {
+          message.error("推荐信息加载失败");
+        }
+        console.log("All Recommendations:", res)
 
-        const bannersData = normalizeJson(b);
-        const dailyData = normalizeJson(d);
-        const recommendData = normalizeJson(r);
-        const newSongsData = normalizeJson(s);
-        const newAlbumsData = normalizeJson(a);
-
-        if (bannersData.code === 20000) setBanners(bannersData.data);
-        if (dailyData.code === 20000) setDailyPlaylists(dailyData.data[0]);
-        if (recommendData.code === 20000) setRecommendPlaylists(recommendData.data.list);
-        if (newSongsData.code === 20000) setNewSongs(newSongsData.data.list);
-        if (newAlbumsData.code === 20000) setNewAlbums(newAlbumsData.data.list);
-
-        console.log("首页数据：", {
-          banners: bannersData,
-          daily: dailyData,
-          recommend: recommendData,
-          newSongs: newSongsData,
-          newAlbums: newAlbumsData
-        });
-
+        setBanners(res.data.banners)
+        setDailyPlaylists(res.data.daily[0])
+        setNewAlbums(res.data.new_album.list)
+        setNewSongs(res.data.new_song.list)
+        setRecommendPlaylists(res.data.official_playlist.list)        
       } catch (err) {
         console.error(err);
         message.error("网络连接超时");
       } finally {
         setLoading(false);
-      }
+      }      
     }
 
-    loadAll();
+    loadAllInformation();
   }, []);
 
   // 把专属推荐歌单插入推荐歌单第一位

@@ -13,6 +13,9 @@ import RadioPage from "../pages/radio/RadioPage";
 import RadioDetailPage from "../pages/radio/RadioDetailPage";
 import RecentPage from "../pages/recent/RecentPlaysPage";
 import LikedPage from "../pages/liked/LikedPage";
+import FavoriteAlbumsPage from "../pages/favorite/FavoriteAlbumsPage";
+import FavoritePlaylistsPage from "../pages/favorite/FavoritePlaylistsPage";
+import FavoriteArtistsPage from "../pages/favorite/FavoriteArtistsPage";
 
 export const PageRegistry = {
   home: DiscoverPage,
@@ -30,4 +33,7 @@ export const PageRegistry = {
   radioDetail: RadioDetailPage,
   recent: RecentPage,
   liked: LikedPage,
+  "fav-album": FavoriteAlbumsPage,
+  "fav-playlist": FavoritePlaylistsPage,
+  "fav-artist": FavoriteArtistsPage,
 };

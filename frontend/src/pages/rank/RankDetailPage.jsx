@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { GetRankingDetail } from "../../../wailsjs/go/backend/RankingBridge";
 import TopNavBar from "../../components/TopNavBar";
-import { message } from "antd"
+import { message } from "antd";
+import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
 
 export default function RankDetailPage({ topId, onBack }) {
   const [rankData, setRankData] = useState(null);
@@ -11,7 +12,8 @@ export default function RankDetailPage({ topId, onBack }) {
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
 
-
+  const { isLiked, toggleLike } = useFavorite();
+  const { playTrack } = useMusicPlayer();
   const scrollRef = useRef(null);
 
   // Reset pagination when switching to a new榜单
@@ -196,7 +198,17 @@ export default function RankDetailPage({ topId, onBack }) {
                   className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log("播放歌曲:", s.songId);
+                    const songData = {
+                      id: s.songId,
+                      mid: s.songMid,
+                      name: s.title,
+                      artist: s.singerName,
+                      albumname: s.albumName,
+                      albummid: s.albumMid,
+                      duration: s.interval,
+                      cover: coverUrl
+                    };
+                    playTrack(songData);
                   }}
                 >
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -207,13 +219,25 @@ export default function RankDetailPage({ topId, onBack }) {
 
                 {/* 收藏 */}
                 <button
-                  className="w-8 h-8 flex items-center justify-center hover:text-warm-primary"
+                  className={`w-8 h-8 flex items-center justify-center hover:text-warm-primary ${
+                    isLiked(s.songMid) ? "text-warm-primary" : ""
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log("收藏歌曲:", s.songId);
+                    const songData = {
+                      id: s.songId,
+                      mid: s.songMid,
+                      name: s.title,
+                      artist: s.singerName,
+                      albumname: s.albumName,
+                      albummid: s.albumMid,
+                      duration: s.interval,
+                      cover: coverUrl
+                    };
+                    toggleLike(songData);
                   }}
                 >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill={isLiked(s.songMid) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z" />
                   </svg>
                 </button>

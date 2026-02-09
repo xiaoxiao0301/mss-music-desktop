@@ -10,6 +10,7 @@ const (
 	recommendNewSongPath = "/recommend/newsong"
 	recommendNewAlbumPath = "/recommend/newalbum"
 	recommendPlaylistOfficialPath = "/recommend/official/playlist" 
+	recommendAllPath = "/recommend/all"
 
 	authPath    = "/auth/request-otp"
 	authVerifyPath  = "/auth/verify-otp"
@@ -22,6 +23,8 @@ const (
 	artistTypesPath = "/artist/types"
 	artistFiltersPath = "/artist/list"
 	artistDetailPath = "/artist/detail"
+	artistAlbumsPath = "/artist/albums"
+	artistMvsPath = "/artist/mvs"
 
 	systemPlaylistCategoriesPath = "/playlist/types"
 	systemPlaylistCategoriesListPath = "/playlist/category/list"
@@ -42,6 +45,8 @@ const (
 	songPlayPath  = "/song/play"
 	songLyricsPath = "/song/lyrics"
 	songDetailAndLyricsAndPlayURLPath = "/song/detail-lyrics-playurl"
+
+	favoritePath = "/favorites"
 )
 
 func GetRequestOTPPath() string {
@@ -65,7 +70,7 @@ func GetRankingListPath() string {
 }
 
 func GetRankingDetailPath(topID, page uint) string {
-	return fmt.Sprintf("%s%s?top_id=%d&page=%d&period=%s", apiBasePath, rankingDetailPath, topID, page)
+	return fmt.Sprintf("%s%s?top_id=%d&page=%d", apiBasePath, rankingDetailPath, topID, page)
 }
 
 func GetArtistTypesPath() string {
@@ -78,6 +83,14 @@ func GetArtistFiltersPath(page, area, genre, sex, index int) string {
 
 func GetArtistDetailPath(artistID string, page uint) string {
 	return fmt.Sprintf("%s%s?artist_id=%s&page=%d", apiBasePath, artistDetailPath, artistID, page)
+}
+
+func GetArtistAlbumsPath(artistID string, page uint) string {
+	return fmt.Sprintf("%s%s?artist_id=%s&page=%d&size=30", apiBasePath, artistAlbumsPath, artistID, page)
+}
+
+func GetArtistMvsPath(artistID string, page uint) string {
+	return fmt.Sprintf("%s%s?artist_id=%s&page=%d&size=20", apiBasePath, artistMvsPath, artistID, page)
 }
 
 func GetSystemPlaylistCategoriesPath() string {
@@ -158,4 +171,20 @@ func GetSongDetailAndLyricsAndPlayURLPath(songID string) string {
 
 func GetAlbumDetailAndSongListsPath(albumID string) string {
 	return fmt.Sprintf("%s%s?album_id=%s", apiBasePath, albumDetailAndSongListsPath, albumID)
+}
+
+func GetRecommendAllPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, recommendAllPath)
+}
+
+func GetAddFavoritePath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, favoritePath)
+}
+
+func GetRemoveFavoritePath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, favoritePath)
+}
+
+func GetFavoritesPath(targetType string) string {
+	return fmt.Sprintf("%s%s?target_type=%s", apiBasePath, favoritePath, targetType)
 }

@@ -1,19 +1,51 @@
 import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { message } from "antd";
+import { AddFavorite, RemoveFavorite, GetFavoriteSongs } from "../../wailsjs/go/backend/FavoriteBridge";
 
 const FavoriteContext = createContext();
 const MusicPlayerContext = createContext();
 
 export function FavoriteProvider({ children }) {
-  const [likedSongs, setLikedSongs] = useState([]);
+  const [likedSongs, setLikedSongs] = useState([]); // 前端显示用的完整歌曲对象
+  const [likedSongMids, setLikedSongMids] = useState([]); // 后端存储的 MID 列表
   const [favoritePlaylists, setFavoritePlaylists] = useState([]);
   const [favoriteArtists, setFavoriteArtists] = useState([]);
   const [recentPlays, setRecentPlays] = useState([]);
 
-  // 歌曲是否喜欢
-  const isLiked = (id) => likedSongs.some(s => s.id === id);
+  // 初始化时从后端加载收藏的歌曲MID列表
+  useEffect(() => {
+    const loadFavoriteSongs = async () => {
+      try {
+        const userID = localStorage.getItem("userID");
+        if (!userID) {
+          setLikedSongMids([]);
+          return;
+        }
+        const mids = await GetFavoriteSongs();
+        setLikedSongMids(mids || []);
+      } catch (error) {
+        const message = String(error || "");
+        if (message.includes("not logged in")) {
+          localStorage.removeItem("userID");
+          setLikedSongMids([]);
+          return;
+        }
+        console.error("Failed to load favorite songs:", error);
+      }
+    };
+    loadFavoriteSongs();
+  }, []);
 
-  // 切换喜欢歌曲
-  const toggleLike = (song) => {
+  // 歌曲是否喜欢
+  const isLiked = (mid) => likedSongMids.includes(mid);
+
+  // 切换喜欢歌曲（异步调用后端）
+  const toggleLike = async (song) => {
+    const userID = localStorage.getItem("userID");
+    if (!userID) {
+      message.warning("请先登录");
+      return;
+    }
     const simpleSong = {
       id: song.id,
       mid: song.mid,
@@ -23,10 +55,28 @@ export function FavoriteProvider({ children }) {
       cover: song.cover
     };
 
-    if (isLiked(song.id)) {
-      setLikedSongs(likedSongs.filter(s => s.id !== song.id));
+    if (isLiked(song.mid)) {
+      // 取消收藏
+      try {
+        await RemoveFavorite(song.mid, "song");
+        setLikedSongMids(likedSongMids.filter(m => m !== song.mid));
+        setLikedSongs(likedSongs.filter(s => s.mid !== song.mid));
+        message.success("已取消收藏");
+      } catch (error) {
+        console.error("Failed to remove favorite:", error);
+        message.error("取消收藏失败");
+      }
     } else {
-      setLikedSongs([...likedSongs, simpleSong]);
+      // 添加收藏
+      try {
+        await AddFavorite(song.mid, "song");
+        setLikedSongMids([...likedSongMids, song.mid]);
+        setLikedSongs([...likedSongs, simpleSong]);
+        message.success("已收藏");
+      } catch (error) {
+        console.error("Failed to add favorite:", error);
+        message.error("收藏失败");
+      }
     }
   };
 

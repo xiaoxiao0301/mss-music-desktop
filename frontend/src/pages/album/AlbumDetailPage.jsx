@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { message } from "antd";
 import { GetAlbumDetailAndSongLists } from "../../../wailsjs/go/backend/AlbumBridge";
+import { AddFavorite, RemoveFavorite } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { AlbumTypeMap, normalizeJson } from "../../utils/helper";
 import { getCoverUrl} from "../../utils/helper";
 import TopNavBar from "../../components/TopNavBar";
@@ -11,6 +12,7 @@ export default function AlbumDetailPage({ albumMid, onBack }) {
   const [detail, setDetail] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAlbumFavorited, setIsAlbumFavorited] = useState(false);
 
   const { playTrack } = useMusicPlayer();
   const { isLiked, toggleLike } = useFavorite();
@@ -20,6 +22,12 @@ export default function AlbumDetailPage({ albumMid, onBack }) {
     setLoading(true);
     loadAlbumDetailAndSongLists(albumMid);
   }, [albumMid]);
+
+  useEffect(() => {
+    if (detail?.basicInfo?.albumMid) {
+      checkIfFavorited(detail.basicInfo.albumMid);
+    }
+  }, [detail?.basicInfo?.albumMid]);
 
   const loadAlbumDetailAndSongLists = async (mid) => {
       try {
@@ -39,6 +47,41 @@ export default function AlbumDetailPage({ albumMid, onBack }) {
         setLoading(false);
       }
     }
+
+  const checkIfFavorited = async (albumMid) => {
+    try {
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        setIsAlbumFavorited(false);
+        return;
+      }
+      const favoritedKey = `album_${albumMid}_favorited`;
+      const isFav = localStorage.getItem(favoritedKey) === "true";
+      setIsAlbumFavorited(isFav);
+    } catch (error) {
+      console.error("Failed to check if favorited:", error);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!detail?.basicInfo?.albumMid) return;
+    try {
+      if (isAlbumFavorited) {
+        await RemoveFavorite(detail.basicInfo.albumMid, "album");
+        setIsAlbumFavorited(false);
+        localStorage.removeItem(`album_${detail.basicInfo.albumMid}_favorited`);
+        message.success("取消收藏");
+      } else {
+        await AddFavorite(detail.basicInfo.albumMid, "album");
+        setIsAlbumFavorited(true);
+        localStorage.setItem(`album_${detail.basicInfo.albumMid}_favorited`, "true");
+        message.success("收藏成功");
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      message.error("操作失败");
+    }
+  };
 
   const normalizedSongs = useMemo(() => {
     if (!detail || !songs.length) return [];
@@ -133,12 +176,27 @@ export default function AlbumDetailPage({ albumMid, onBack }) {
         </div>
 
         {/* 歌曲列表（使用 SongListDesktop） */}
-        <SongListDesktop
-          songs={normalizedSongs}
-          onPlay={(song) => playTrack(song)}
-          onLike={(song) => toggleLike(song)}
-          likedChecker={(id) => isLiked(id)}
-        />
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-[#EDE7E2]">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-lg font-bold">歌曲列表</p>
+            <button 
+              onClick={handleToggleFavorite}
+              className={`px-3 py-1 text-sm rounded transition ${
+                isAlbumFavorited
+                  ? "bg-[#FF8A3D] text-white"
+                  : "bg-[#FFE8D6] text-[#2B2B2B] hover:bg-[#FFDCC2]"
+              }`}
+            >
+              {isAlbumFavorited ? "❤️ 已收藏" : "🤍 收藏专辑"}
+            </button>
+          </div>
+          <SongListDesktop
+            songs={normalizedSongs}
+            onPlay={(song) => playTrack(song, normalizedSongs)}
+            onLike={(song) => toggleLike(song)}
+            likedChecker={(id) => isLiked(id)}
+          />
+        </div>
       </div>
     </div>
   );

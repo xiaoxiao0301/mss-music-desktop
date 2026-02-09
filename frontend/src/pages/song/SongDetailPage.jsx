@@ -162,7 +162,7 @@ function SongDetailSkeleton() {
 /* ---------------- Hero Header ---------------- */
 
 function HeroHeader({ track, coverUrl, songPlayURL, playTrack, pauseTrack, isPlaying, currentTrack, isLiked, toggleLike, lyrics, transLyrics }) {
-  const liked = isLiked(track.id);
+  const liked = isLiked(track.mid);
   const isCurrentSongPlaying = currentTrack && currentTrack.id === track.id && isPlaying;
 
 
@@ -184,7 +184,6 @@ function HeroHeader({ track, coverUrl, songPlayURL, playTrack, pauseTrack, isPla
       transLyrics: transLyrics
     });
 
-    console.log("play clicked, url:", songPlayURL);    
   };
 
   const handleLike = () => {

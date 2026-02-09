@@ -3,7 +3,7 @@ import { GetArtistTypes, GetArtistListByFilters } from "../../../wailsjs/go/back
 import { message } from "antd";
 import SlidePage from "../../components/SlidePage";
 import ArtistDetailPage from "./ArtistDetailPage";
-import { formatConcern } from "../../utils/helper";
+import { formatConcern, getSingerCover } from "../../utils/helper";
 
 export default function ArtistPage() {
   const [categories, setCategories] = useState(null);
@@ -134,6 +134,7 @@ export default function ArtistPage() {
               <ArtistCard
                 artist={artist}
                 onClick={() => setCurrentArtist(artist.singer_mid)}
+                getSingerCover={getSingerCover}
               />
             </div>
           ))}
@@ -151,6 +152,7 @@ export default function ArtistPage() {
               key={artist.singer_id}
               artist={artist}
               onClick={() => setCurrentArtist(artist.singer_mid)}
+              getSingerCover={getSingerCover}
             />
           ))}
         </div>
@@ -206,8 +208,8 @@ function FilterRow({ title, list, selected, onSelect }) {
 /* ------------------ 子组件：歌手卡片 ------------------ */
 
 
-function ArtistCard({ artist, onClick }) {
-  const pic = `https://y.qq.com/music/photo_new/T001R300x300M000${artist.singer_mid}.jpg`;
+function ArtistCard({ artist, onClick, getSingerCover }) {
+  const pic = getSingerCover(artist.singer_mid);
 
   return (
     <div

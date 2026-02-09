@@ -31,3 +31,19 @@ func (a *ArtistBridge) GetArtistDetail(artistID string, page uint) (string, erro
 	}
 	return string(resp), nil
 }
+
+func (a *ArtistBridge) GetArtistAlbums(artistID string, page uint) (string, error) {
+	resp, err := a.api.Get(GetArtistAlbumsPath(artistID, page))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}
+
+func (a *ArtistBridge) GetArtistMvs(artistID string, page uint) (string, error) {
+	resp, err := a.api.Get(GetArtistMvsPath(artistID, page))
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}

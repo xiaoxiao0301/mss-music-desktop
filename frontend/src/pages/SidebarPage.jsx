@@ -48,7 +48,6 @@ function Sidebar({ currentPage, switchRootPage }) {
     loadUserProfile();
   }, []);
 
-  console.log("User profile in sidebar:", profile);
   const avatar = profile?.avatar || randomAvatar;
   const nickname = profile?.nickname || randomName;
   const loggedIn = !!profile;
@@ -111,10 +110,10 @@ function Sidebar({ currentPage, switchRootPage }) {
         <NavItem label="MV" active={currentPage === "mv"} collapsed={collapsed} onClick={() => switchRootPage("mv")} />
 
         <SectionTitle collapsed={collapsed}>我的音乐</SectionTitle>
-        <NavItem label="喜欢的音乐" active={currentPage === "fav"} collapsed={collapsed} onClick={() => switchRootPage("fav")} />
-        <NavItem label="收藏的歌单" active={currentPage === "fav-playlist"} collapsed={collapsed} onClick={() => switchRootPage("fav-playlist")} />
-        <NavItem label="收藏的歌手" active={currentPage === "fav-artist"} collapsed={collapsed} onClick={() => switchRootPage("fav-artist")} />
+        <NavItem label="喜欢的音乐" active={currentPage === "liked"} collapsed={collapsed} onClick={() => switchRootPage("liked")} />
+        <NavItem label="收藏的歌单" active={currentPage === "fav-playlist"} collapsed={collapsed} onClick={() => switchRootPage("fav-playlist")} />  
         <NavItem label="收藏的专辑" active={currentPage === "fav-album"} collapsed={collapsed} onClick={() => switchRootPage("fav-album")} />
+        <NavItem label="关注的歌手" active={currentPage === "fav-artist"} collapsed={collapsed} onClick={() => switchRootPage("fav-artist")} />
         <NavItem label="最近播放" active={currentPage === "recent"} collapsed={collapsed} onClick={() => switchRootPage("recent")} />
 
         <SectionTitle collapsed={collapsed}>其他</SectionTitle>

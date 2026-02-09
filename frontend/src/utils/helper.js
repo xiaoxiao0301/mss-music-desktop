@@ -97,3 +97,7 @@ export function formatDate(ts) {
 export function getCoverUrl(albumID, size = 300) {
   return `https://y.qq.com/music/photo_new/T002R300x300M000${albumID}.jpg`;
 }
+
+export function getSingerCover(singerMid) {
+  return `https://y.qq.com/music/photo_new/T001R300x300M000${singerMid}.jpg`
+}

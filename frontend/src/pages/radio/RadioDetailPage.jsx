@@ -1,15 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import TopNavBar from "../../components/TopNavBar";
+import SongListDesktop from "../../components/SongList";
 import { GetRadioCategorySongList } from "../../../wailsjs/go/backend/RadioBridge";
 import { message } from "antd";
+import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
+import { getCoverUrl } from "../../utils/helper";
 
 export default function RadioDetailPage({ radio, onBack }) {
   const [songList, setSongList] = useState(null);
+  const { isLiked, toggleLike } = useFavorite();
+  const { playTrack } = useMusicPlayer();
 
   useEffect(() => {
     if (!radio) return;
     loadSongList(radio.id);
   }, [radio]);
+
+  const normalizedSongs = useMemo(() => {
+    if (!songList?.tracks) return [];
+    return songList.tracks.map((track) => ({
+      id: track.id,
+      mid: track.mid,
+      name: track.title,
+      artist: track.singer.map((s) => s.name).join(" / "),
+      albumname: track.album.title,
+      albummid: track.album.mid,
+      duration: track.interval,
+      cover: getCoverUrl(track.album.mid),
+    }));
+  }, [songList]);
 
   const loadSongList = async (radioId) => {
     try {
@@ -58,39 +77,18 @@ export default function RadioDetailPage({ radio, onBack }) {
       </div>
 
       {/* 歌曲列表 */}
-      <div className="flex-1 overflow-auto card p-4">
-        {!songList && <p className="text-center text-warm-subtext">加载中...</p>}
+      <div className="flex-1 overflow-auto">
+        {!songList && <p className="text-center text-warm-subtext p-4">加载中...</p>}
 
-        {songList?.tracks?.map((track) => (
-          <div
-            key={track.id}
-            className="flex items-center justify-between py-3 border-b border-warm-secondary/40 hover:bg-warm-secondary/40 px-2 rounded-lg transition cursor-pointer"
-          >
-            <div>
-              <p className="font-medium">{track.title}</p>
-
-              <p className="text-sm text-warm-subtext">
-                {track.singer.map((s) => s.name).join(" / ")}
-              </p>
-
-              <p className="text-xs text-warm-subtext mt-1">
-                专辑：{track.album.title}
-              </p>
-            </div>
-
-            <span className="text-sm text-warm-subtext">
-              {formatTime(track.interval)}
-            </span>
-          </div>
-        ))}
+        {normalizedSongs.length > 0 && (
+          <SongListDesktop
+            songs={normalizedSongs}
+            onPlay={(song) => playTrack(song, normalizedSongs)}
+            onLike={(song) => toggleLike(song)}
+            likedChecker={(id) => isLiked(id)}
+          />
+        )}
       </div>
     </div>
   );
-}
-
-// 工具函数：秒 → mm:ss
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }

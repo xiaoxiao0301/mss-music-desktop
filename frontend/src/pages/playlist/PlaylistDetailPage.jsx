@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { GetPlaylistCategoriesListDetail } from "../../../wailsjs/go/backend/PlaylistBridge";
+import { AddFavorite, RemoveFavorite } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { message } from "antd";
 import { fixUrl, formatPlaylistAuthor, formatNumber, getCoverUrl, normalizeJson } from "../../utils/helper";
 import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
@@ -10,6 +11,7 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack }) 
   const realID = playlistId;
   const [detail, setDetail] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
+  const [isPlaylistFavorited, setIsPlaylistFavorited] = useState(false);
 
   const { playTrack } = useMusicPlayer();
   const { isLiked, toggleLike } = useFavorite();
@@ -19,6 +21,28 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack }) 
     setLoading(true);
     loadListDetail(realID);
   }, [realID]);
+
+  useEffect(() => {
+    if (detail?.disstid) {
+      checkIfFavorited(detail.disstid);
+    }
+  }, [detail?.disstid]);
+
+  const checkIfFavorited = async (disstid) => {
+    try {
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        setIsPlaylistFavorited(false);
+        return;
+      }
+      // 通过本地存储检查
+      const favoritedKey = `playlist_${disstid}_favorited`;
+      const isFav = localStorage.getItem(favoritedKey) === "true";
+      setIsPlaylistFavorited(isFav);
+    } catch (error) {
+      console.error("Failed to check if favorited:", error);
+    }
+  };
 
   const normalizedSongs = useMemo(() => {
     if (!detail || !detail.songlist) return [];
@@ -53,6 +77,26 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack }) 
     }
   };
 
+  const handleToggleFavorite = async () => {
+    if (!detail) return;
+    try {
+      if (isPlaylistFavorited) {
+        await RemoveFavorite(detail.disstid, "playlist");
+        setIsPlaylistFavorited(false);
+        localStorage.removeItem(`playlist_${detail.disstid}_favorited`);
+        message.success("取消收藏");
+      } else {
+        await AddFavorite(detail.disstid, "playlist");
+        setIsPlaylistFavorited(true);
+        localStorage.setItem(`playlist_${detail.disstid}_favorited`, "true");
+        message.success("收藏成功");
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      message.error("操作失败");
+    }
+  };
+
   if (loading) return <PlaylistDetailSkeleton />;
   if (!detail) return null;
 
@@ -74,12 +118,12 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack }) 
       <StatsSection detail={detail} />
 
       {/* ActionBar */}
-      <ActionBar />
+      <ActionBar isPlaylistFavorited={isPlaylistFavorited} onToggleFavorite={handleToggleFavorite} />
 
       {/* 歌曲列表 */}
       <SongListDesktop
         songs={normalizedSongs}
-        onPlay={(song) => playTrack(song)}
+        onPlay={(song) => playTrack(song, normalizedSongs)}
         onLike={(song) => toggleLike(song)}
         likedChecker={(id) => isLiked(id)}
       />
@@ -133,20 +177,27 @@ function StatsSection({ detail }) {
 
 /* ---------------- ActionBar ---------------- */
 
-function ActionBar() {
+function ActionBar({ isPlaylistFavorited, onToggleFavorite }) {
   return (
     <div className="flex gap-4 px-4 py-3 border-b border-[#EDE7E2] bg-white">
       <button className="px-4 py-2 rounded-lg bg-[#FF8A3D] text-white shadow hover:bg-[#FF7A1F]">
         播放全部
       </button>
 
-      <button className="px-4 py-2 rounded-lg bg-[#FFE8D6] text-[#2B2B2B] hover:bg-[#FFDCC2]">
-        收藏
+      <button 
+        onClick={onToggleFavorite}
+        className={`px-4 py-2 rounded-lg transition ${
+          isPlaylistFavorited
+            ? "bg-[#FF8A3D] text-white"
+            : "bg-[#FFE8D6] text-[#2B2B2B] hover:bg-[#FFDCC2]"
+        }`}
+      >
+        {isPlaylistFavorited ? "❤️ 已收藏" : "🤍 收藏"}
       </button>
 
-      <button className="px-4 py-2 rounded-lg bg-[#FFE8D6] text-[#2B2B2B] hover:bg-[#FFDCC2]">
+      {/* <button className="px-4 py-2 rounded-lg bg-[#FFE8D6] text-[#2B2B2B] hover:bg-[#FFDCC2]">
         分享
-      </button>
+      </button> */}
     </div>
   );
 }

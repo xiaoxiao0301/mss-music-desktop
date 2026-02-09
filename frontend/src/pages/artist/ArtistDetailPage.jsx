@@ -1,26 +1,95 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import TopNavBar from "../../components/TopNavBar";
-import { GetArtistDetail } from "../../../wailsjs/go/backend/ArtistBridge";
+import SongListDesktop from "../../components/SongList";
+import { GetArtistDetail, GetArtistAlbums, GetArtistMvs } from "../../../wailsjs/go/backend/ArtistBridge";
+import { AddFavorite, RemoveFavorite, GetFavoriteArtists } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { message } from "antd";
-import { formatTime, formatConcern } from "../../utils/helper";
+import { fixUrl, formatConcern, getCoverUrl, getSingerCover } from "../../utils/helper";
+import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
 
-export default function ArtistDetailPage({ artistMid, onBack }) {
+export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [songList, setSongList] = useState([]);
+  const [totalSongs, setTotalSongs] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [albumList, setAlbumList] = useState([]);
+  const [albumTotal, setAlbumTotal] = useState(0);
+  const [albumPage, setAlbumPage] = useState(1);
+  const [albumLoadingMore, setAlbumLoadingMore] = useState(false);
+  const [mvList, setMvList] = useState([]);
+  const [mvTotal, setMvTotal] = useState(0);
+  const [mvPage, setMvPage] = useState(1);
+  const [mvLoadingMore, setMvLoadingMore] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   // 当前 Tab：intro / songs / albums / mv
   const [tab, setTab] = useState("intro");
 
+  const { playTrack } = useMusicPlayer();
+  const { isLiked, toggleLike } = useFavorite();
+
   useEffect(() => {
     if (!artistMid) return;
-    loadDetail(artistMid);
+    setPage(1);
+    setSongList([]);
+    setTotalSongs(0);
+    setDetail(null);
+    setAlbumList([]);
+    setAlbumTotal(0);
+    setAlbumPage(1);
+    setMvList([]);
+    setMvTotal(0);
+    setMvPage(1);
+  }, [artistMid]);
+
+  useEffect(() => {
+    if (!artistMid) return;
+    loadDetail(artistMid, page);
   }, [artistMid, page]);
 
-  const loadDetail = async (mid) => {
-    try {
-      setLoading(true);
+  useEffect(() => {
+    if (!artistMid) return;
+    checkIfFollowing(artistMid);
+  }, [artistMid]);
 
-      const res = await GetArtistDetail(mid, page);
+  useEffect(() => {
+    if (!artistMid) return;
+    if (tab !== "albums") return;
+    if (albumList.length > 0) return;
+    loadArtistAlbums(artistMid, 1);
+  }, [artistMid, tab]);
+
+  useEffect(() => {
+    if (!artistMid) return;
+    if (tab !== "mv") return;
+    if (mvList.length > 0) return;
+    loadArtistMvs(artistMid, 1);
+  }, [artistMid, tab]);
+
+  const normalizedSongs = useMemo(() => {
+    if (!songList.length) return [];
+    return songList.map((song) => ({
+      id: song.id,
+      mid: song.mid,
+      name: song.title,
+      artist: song.singer.map((s) => s.name).join(" / "),
+      albumname: song.album.title,
+      albummid: song.album.mid,
+      duration: song.interval,
+      cover: getCoverUrl(song.album.mid),
+    }));
+  }, [songList]);
+
+  const loadDetail = async (mid, currentPage) => {
+    try {
+      if (currentPage === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const res = await GetArtistDetail(mid, currentPage);
       const data = typeof res === "string" ? JSON.parse(res) : res;
 
       if (data.code !== 20000 && data.code !== 1) {
@@ -28,12 +97,145 @@ export default function ArtistDetailPage({ artistMid, onBack }) {
         return;
       }
       console.log("歌手详情数据：", data); 
-      setDetail(data.data);
+      if (currentPage === 1) {
+        setDetail(data.data);
+        setSongList(data.data.songlist || []);
+      } else {
+        const nextSongs = data.data.songlist || [];
+        setSongList((prev) => [...prev, ...nextSongs]);
+      }
+      setTotalSongs(data.data.total_song || 0);
     } catch (e) {
       console.error(e);
       message.error("网络连接超时");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (loadingMore) return;
+    const total = detail?.total_song || totalSongs;
+    if (total && songList.length >= total) return;
+    setPage((prev) => prev + 1);
+  };
+
+  const loadArtistAlbums = async (mid, currentPage) => {
+    try {
+      if (currentPage === 1) {
+        setAlbumLoadingMore(false);
+      } else {
+        setAlbumLoadingMore(true);
+      }
+
+      const res = await GetArtistAlbums(mid, currentPage);
+      const data = typeof res === "string" ? JSON.parse(res) : res;
+      if (data.code !== 20000 && data.code !== 1) {
+        message.error("获取歌手专辑失败");
+        return;
+      }
+
+      const list = data.data?.list || [];
+      const total = detail?.total_album || data.data?.total || 0;
+      if (currentPage === 1) {
+        setAlbumList(list);
+      } else {
+        setAlbumList((prev) => [...prev, ...list]);
+      }
+      setAlbumTotal(total);
+      setAlbumPage(currentPage);
+    } catch (error) {
+      console.error(error);
+      message.error("获取歌手专辑失败");
+    } finally {
+      setAlbumLoadingMore(false);
+    }
+  };
+
+  const handleLoadMoreAlbums = () => {
+    if (albumLoadingMore) return;
+    const total = detail?.total_album || albumTotal;
+    if (total && albumList.length >= total) return;
+    const nextPage = albumPage + 1;
+    loadArtistAlbums(artistMid, nextPage);
+  };
+
+  const loadArtistMvs = async (mid, currentPage) => {
+    try {
+      if (currentPage === 1) {
+        setMvLoadingMore(false);
+      } else {
+        setMvLoadingMore(true);
+      }
+
+      const res = await GetArtistMvs(mid, currentPage);
+      const data = typeof res === "string" ? JSON.parse(res) : res;
+      if (data.code !== 20000 && data.code !== 1) {
+        message.error("获取歌手MV失败");
+        return;
+      }
+
+      const list = data.data?.list || [];
+      const total = detail?.total_mv || data.data?.total || 0;
+      if (currentPage === 1) {
+        setMvList(list);
+      } else {
+        setMvList((prev) => [...prev, ...list]);
+      }
+      setMvTotal(total);
+      setMvPage(currentPage);
+    } catch (error) {
+      console.error(error);
+      message.error("获取歌手MV失败");
+    } finally {
+      setMvLoadingMore(false);
+    }
+  };
+
+  const handleLoadMoreMvs = () => {
+    if (mvLoadingMore) return;
+    const total = detail?.total_mv || mvTotal;
+    if (total && mvList.length >= total) return;
+    const nextPage = mvPage + 1;
+    loadArtistMvs(artistMid, nextPage);
+  };
+
+  const checkIfFollowing = async (mid) => {
+    try {
+      const userID = localStorage.getItem("userID");
+      if (!userID) {
+        setIsFollowing(false);
+        return;
+      }
+      const mids = await GetFavoriteArtists();
+      setIsFollowing(Array.isArray(mids) && mids.includes(mid));
+    } catch (error) {
+      console.error("Failed to check follow status:", error);
+      setIsFollowing(false);
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    const userID = localStorage.getItem("userID");
+    if (!userID) {
+      message.warning("请先登录");
+      return;
+    }
+    if (!artistMid) return;
+    try {
+      if (isFollowing) {
+        await RemoveFavorite(artistMid, "singer");
+        setIsFollowing(false);
+        message.success("已取消关注");
+      } else {
+        await AddFavorite(artistMid, "singer");
+        setIsFollowing(true);
+        message.success("已关注");
+      }
+    } catch (error) {
+      console.error("Failed to toggle follow:", error);
+      message.error("操作失败");
     }
   };
 
@@ -61,12 +263,24 @@ export default function ArtistDetailPage({ artistMid, onBack }) {
 
           <div className="card p-6 mb-4 flex gap-6 items-center">
             <img
-              src={`https://y.qq.com/music/photo_new/T001R300x300M000${singer.mid}.jpg`}
+              src={getSingerCover(singer.mid)}
               className="w-40 h-40 rounded-xl object-cover shadow-lg"
             />
 
             <div className="flex flex-col justify-between">
-              <h1 className="text-2xl font-bold">{singer.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold">{singer.name}</h1>
+                <button
+                  onClick={handleToggleFollow}
+                  className={`px-3 py-1 text-sm rounded transition ${
+                    isFollowing
+                      ? "bg-warm-primary text-white"
+                      : "bg-warm-secondary/70 text-warm-text hover:bg-warm-secondary"
+                  }`}
+                >
+                  {isFollowing ? "已关注" : "关注"}
+                </button>
+              </div>
 
               {singer.other_name && (
                 <p className="text-warm-subtext mt-1">
@@ -106,7 +320,6 @@ export default function ArtistDetailPage({ artistMid, onBack }) {
             ))}
           </div>
 
-          {/* Tab 内容区域 */}
           {tab === "intro" && (
             <div className="card p-4 mb-4">
               <p className="text-lg font-bold mb-2">歌手简介</p>
@@ -117,33 +330,31 @@ export default function ArtistDetailPage({ artistMid, onBack }) {
           )}
 
           {tab === "songs" && (
-            <div className="card p-4 mb-4">
-              <div className="flex justify-between items-center mb-3">
-                <p className="text-lg font-bold">热门歌曲</p>
-                <button className="text-sm text-warm-primary">
-                  ▶ 全部播放
-                </button>
-              </div>
-
-              {detail.songlist.map((song) => (
-                <div key={song.id} className="flex items-center justify-between py-3 border-b border-warm-secondary/40 hover:bg-warm-secondary/40 px-2 rounded-lg transition cursor-pointer" >
-                  <div>
-                    <p className="font-medium">{song.title}</p>
-
-                    <p className="text-sm text-warm-subtext">
-                      {song.singer.map((s) => s.name).join(" / ")}
-                    </p>
-
-                    <p className="text-xs text-warm-subtext mt-1">
-                      专辑：{song.album.title}
-                    </p>
-                  </div>
-
-                  <span className="text-sm text-warm-subtext">
-                    {formatTime(song.interval)}
-                  </span>
+            <div className="mb-4">
+              <SongListDesktop
+                songs={normalizedSongs}
+                onPlay={(song) => playTrack(song, normalizedSongs)}
+                onLike={(song) => toggleLike(song)}
+                likedChecker={(id) => isLiked(id)}
+              />
+              {(detail?.total_song || totalSongs) > 0 && songList.length < (detail?.total_song || totalSongs) && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className={`px-4 py-2 rounded-lg text-sm transition ${
+                      loadingMore
+                        ? "bg-warm-secondary/50 text-warm-subtext"
+                        : "bg-warm-secondary text-warm-text hover:bg-warm-secondary/80"
+                    }`}
+                  >
+                    {loadingMore ? "加载中..." : "获取更多"}
+                  </button>
                 </div>
-              ))}
+              )}
+              {(detail?.total_song || totalSongs) > 0 && songList.length >= (detail?.total_song || totalSongs) && (
+                <p className="text-center text-xs text-warm-subtext mt-4">已加载全部</p>
+              )}
             </div>
           )}
 
@@ -152,15 +363,41 @@ export default function ArtistDetailPage({ artistMid, onBack }) {
             <div className="card p-4 mb-4">
               <p className="text-lg font-bold mb-3">专辑</p>
 
-              {detail.albumlist?.map((album) => (
-                <div key={album.id} className="flex items-center gap-4 py-3 border-b border-warm-secondary/40" >
-                  <img src={`https://y.qq.com/music/photo_new/T002R300x300M000${album.mid}.jpg`} className="w-16 h-16 rounded-lg object-cover" />
+              {albumList.map((album) => (
+                <div
+                  key={album.album_mid}
+                  className="flex items-center gap-4 py-3 border-b border-warm-secondary/40 cursor-pointer"
+                  onClick={() => pushPage?.({ type: "albumDetail", albumMid: album.album_mid })}
+                >
+                  <img
+                    src={getCoverUrl(album.album_mid)}
+                    className="w-16 h-16 rounded-lg object-cover"
+                  />
                   <div>
-                    <p className="font-medium">{album.title}</p>
-                    <p className="text-sm text-warm-subtext">{album.time_public}</p>
+                    <p className="font-medium">{album.album_name}</p>
+                    <p className="text-sm text-warm-subtext">{album.pub_time}</p>
                   </div>
                 </div>
               ))}
+
+              {(detail?.total_album || albumTotal) > 0 && albumList.length < (detail?.total_album || albumTotal) && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={handleLoadMoreAlbums}
+                    disabled={albumLoadingMore}
+                    className={`px-4 py-2 rounded-lg text-sm transition ${
+                      albumLoadingMore
+                        ? "bg-warm-secondary/50 text-warm-subtext"
+                        : "bg-warm-secondary text-warm-text hover:bg-warm-secondary/80"
+                    }`}
+                  >
+                    {albumLoadingMore ? "加载中..." : "获取更多"}
+                  </button>
+                </div>
+              )}
+              {(detail?.total_album || albumTotal) > 0 && albumList.length >= (detail?.total_album || albumTotal) && (
+                <p className="text-center text-xs text-warm-subtext mt-4">已加载全部</p>
+              )}
             </div>
           )}
 
@@ -168,14 +405,34 @@ export default function ArtistDetailPage({ artistMid, onBack }) {
             <div className="card p-4 mb-4">
               <p className="text-lg font-bold mb-3">MV</p>
 
-              {detail.mvlist?.map((mv) => (
+              {mvList.map((mv) => (
                 <div key={mv.id} className="flex items-center gap-4 py-3 border-b border-warm-secondary/40" >
-                  <img src={`https://y.qq.com/music/photo_new/T015R640x360M101${mv.vid}.jpg`} className="w-28 h-16 rounded-lg object-cover" />
+                  <img src={fixUrl(mv.pic)} className="w-28 h-16 rounded-lg object-cover" />
                   <div>
                     <p className="font-medium">{mv.title}</p>
+                    <p className="text-xs text-warm-subtext mt-1">{mv.date}</p>
                   </div>
                 </div>
               ))}
+
+              {(detail?.total_mv || mvTotal) > 0 && mvList.length < (detail?.total_mv || mvTotal) && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={handleLoadMoreMvs}
+                    disabled={mvLoadingMore}
+                    className={`px-4 py-2 rounded-lg text-sm transition ${
+                      mvLoadingMore
+                        ? "bg-warm-secondary/50 text-warm-subtext"
+                        : "bg-warm-secondary text-warm-text hover:bg-warm-secondary/80"
+                    }`}
+                  >
+                    {mvLoadingMore ? "加载中..." : "获取更多"}
+                  </button>
+                </div>
+              )}
+              {(detail?.total_mv || mvTotal) > 0 && mvList.length >= (detail?.total_mv || mvTotal) && (
+                <p className="text-center text-xs text-warm-subtext mt-4">已加载全部</p>
+              )}
             </div>
           )}
 
