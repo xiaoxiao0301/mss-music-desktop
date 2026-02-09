@@ -4,6 +4,8 @@ import { message } from "antd";
 import { fixUrl, formatTime } from "../../utils/helper";
 import SlidePage from "../../components/SlidePage";
 import MVDetailPage from "./MVDetailPage";
+import { SkeletonGrid } from "../../components/SkeletonCard";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 export default function MVPage() {
   const [categories, setCategories] = useState(null);
@@ -80,13 +82,16 @@ export default function MVPage() {
   return (
     <div className="relative flex flex-col h-full overflow-hidden bg-white">
 
-      {/* Loading 遮罩层 */}
-      {loading && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-[999] flex flex-col items-center justify-center pointer-events-none">
-          <div className="animate-spin w-8 h-8 border-4 border-warm-primary border-t-transparent rounded-full"></div>
-          <p className="text-sm text-warm-subtext mt-2">加载中...</p>
+      {/* 首屏加载骨架屏 */}
+      {loading && mvList.length === 0 && (
+        <div className="flex-1 overflow-auto p-4">
+          <div className="card p-4 mb-4 h-32 bg-gray-100 animate-pulse"></div>
+          <SkeletonGrid columns={3} count={9} />
         </div>
       )}
+
+      {/* 分页加载 Loading Spinner */}
+      {loading && mvList.length > 0 && <LoadingSpinner />}
 
       <div className="flex-1 overflow-auto p-4">
 

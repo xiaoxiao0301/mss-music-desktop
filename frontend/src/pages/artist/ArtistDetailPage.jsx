@@ -336,6 +336,8 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
                 onPlay={(song) => playTrack(song, normalizedSongs)}
                 onLike={(song) => toggleLike(song)}
                 likedChecker={(id) => isLiked(id)}
+                onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+                onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
               />
               {(detail?.total_song || totalSongs) > 0 && songList.length < (detail?.total_song || totalSongs) && (
                 <div className="flex justify-center mt-4">
@@ -406,7 +408,11 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
               <p className="text-lg font-bold mb-3">MV</p>
 
               {mvList.map((mv) => (
-                <div key={mv.id} className="flex items-center gap-4 py-3 border-b border-warm-secondary/40" >
+                <div 
+                  key={mv.id} 
+                  className="flex items-center gap-4 py-3 border-b border-warm-secondary/40 cursor-pointer hover:bg-warm-secondary/20 transition"
+                  onClick={() => pushPage?.({ type: "mvDetail", vid: mv.vid })}
+                >
                   <img src={fixUrl(mv.pic)} className="w-28 h-16 rounded-lg object-cover" />
                   <div>
                     <p className="font-medium">{mv.title}</p>

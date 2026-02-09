@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useFavorite } from "../../context/MusicContext";
 import { GetFavoriteSongs } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { GetSongDetail } from "../../../wailsjs/go/backend/SongBridge";
+import { SkeletonList } from "../../components/SkeletonCard";
 
 export default function LikedPage({ pushPage }) {
   const { toggleLike } = useFavorite();
@@ -52,7 +53,7 @@ export default function LikedPage({ pushPage }) {
     <div className="flex flex-col h-full overflow-auto p-4">
       <h1 className="text-2xl font-bold mb-4">❤️ 喜欢的音乐</h1>
 
-      {loading && <p className="text-warm-subtext">加载中...</p>}
+      {loading && <SkeletonList count={8} />}
 
       {!loading && songs.length === 0 && (
         <div className="text-center text-warm-subtext py-10">

@@ -5,6 +5,8 @@ export default function SongListDesktop({
   onPlay,
   onLike,
   likedChecker,
+  onSongClick,  // 新增：点击歌曲跳转
+  onAlbumClick, // 新增：点击专辑跳转
 }) {
   return (
     <div className="w-full mt-4 px-4">
@@ -47,13 +49,23 @@ export default function SongListDesktop({
               />
 
               {/* 歌曲名 */}
-              <span className="truncate font-medium">{song.name}</span>
+              <span 
+                className={`truncate font-medium ${onSongClick ? 'cursor-pointer hover:text-warm-primary transition' : ''}`}
+                onClick={() => onSongClick?.(song)}
+              >
+                {song.name}
+              </span>
 
               {/* 歌手 */}
               <span className="truncate text-[#6B6B6B]">{song.artist}</span>
 
               {/* 专辑 */}
-              <span className="truncate text-[#6B6B6B]">{song.albumname}</span>
+              <span 
+                className={`truncate text-[#6B6B6B] ${onAlbumClick ? 'cursor-pointer hover:text-warm-primary transition' : ''}`}
+                onClick={() => onAlbumClick?.(song)}
+              >
+                {song.albumname}
+              </span>
 
               {/* 操作按钮 */}
               <div className="flex items-center gap-4">

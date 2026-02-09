@@ -7,8 +7,9 @@ import { getCoverUrl} from "../../utils/helper";
 import TopNavBar from "../../components/TopNavBar";
 import SongListDesktop from "../../components/SongList";
 import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
-export default function AlbumDetailPage({ albumMid, onBack }) {
+export default function AlbumDetailPage({ albumMid, onBack, pushPage }) {
   const [detail, setDetail] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);

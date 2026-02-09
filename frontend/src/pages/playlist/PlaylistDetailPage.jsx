@@ -5,8 +5,9 @@ import { message } from "antd";
 import { fixUrl, formatPlaylistAuthor, formatNumber, getCoverUrl, normalizeJson } from "../../utils/helper";
 import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
 import SongListDesktop from "../../components/SongList";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
-export default function PlaylistDetailPage({ playlistId, initialData, onBack }) {
+export default function PlaylistDetailPage({ playlistId, initialData, onBack, pushPage }) {
   console.log("PlaylistDetailPage initialized with ID:", playlistId, "Initial Data:", initialData, "onBack:", onBack);
   const realID = playlistId;
   const [detail, setDetail] = useState(initialData || null);
@@ -126,6 +127,8 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack }) 
         onPlay={(song) => playTrack(song, normalizedSongs)}
         onLike={(song) => toggleLike(song)}
         likedChecker={(id) => isLiked(id)}
+        onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+        onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { GetFavoritePlaylists } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { GetPlaylistCategoriesListDetail } from "../../../wailsjs/go/backend/PlaylistBridge";
 import { fixUrl, formatNumber, formatPlaylistAuthor, normalizeJson } from "../../utils/helper";
+import { SkeletonGrid } from "../../components/SkeletonCard";
 
 export default function FavoritePlaylistsPage({ pushPage, onBack }) {
   const [loading, setLoading] = useState(true);
@@ -76,7 +77,7 @@ export default function FavoritePlaylistsPage({ pushPage, onBack }) {
     <div className="flex flex-col h-full overflow-auto p-4">
       <h1 className="text-2xl font-bold mb-4">📋 收藏的歌单</h1>
 
-      {loading && <p className="text-warm-subtext">加载中...</p>}
+      {loading && <SkeletonGrid columns={5} count={10} />}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {playlists.map(playlist => (

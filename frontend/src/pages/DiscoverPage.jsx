@@ -8,6 +8,8 @@ import SlidePage from "../components/SlidePage";
 import PlaylistDetailPage from "./playlist/PlaylistDetailPage";
 import SongDetailPage from "./song/SongDetailPage";
 import AlbumDetailPage from "./album/AlbumDetailPage";
+import { SkeletonGrid } from "../components/SkeletonCard";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
@@ -75,10 +77,15 @@ export default function DiscoverPage() {
 
   if (loading) {
     return (
-      <div className="p-4 flex justify-center items-center">
-        {showSpinner && (
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-warm-primary border-t-transparent"></div>
-        )}
+      <div className="w-full h-full overflow-y-auto p-4 flex flex-col gap-8">
+        {/* Banner骨架 */}
+        <div className="w-full h-48 bg-gray-200 rounded-xl animate-pulse"></div>
+        {/* 推荐歌单骨架 */}
+        <SkeletonGrid columns={5} count={5} />
+        {/* 新歌推荐骨架 */}
+        <SkeletonGrid columns={5} count={5} />
+        {/* 新专辑骨架 */}
+        <SkeletonGrid columns={5} count={5} />
       </div>
     );
   }

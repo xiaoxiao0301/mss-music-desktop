@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GetFavoriteArtists } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { GetArtistDetail } from "../../../wailsjs/go/backend/ArtistBridge";
+import { SkeletonGrid } from "../../components/SkeletonCard";
 
 export default function FavoriteArtistsPage({ pushPage, onBack }) {
   const [loading, setLoading] = useState(true);
@@ -69,7 +70,7 @@ export default function FavoriteArtistsPage({ pushPage, onBack }) {
     <div className="flex flex-col h-full overflow-auto p-4">
       <h1 className="text-2xl font-bold mb-4">🎤 关注的歌手</h1>
 
-      {loading && <p className="text-warm-subtext">加载中...</p>}
+      {loading && <SkeletonGrid columns={5} count={10} />}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {artists.map(artist => (

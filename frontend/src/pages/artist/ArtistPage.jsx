@@ -4,6 +4,8 @@ import { message } from "antd";
 import SlidePage from "../../components/SlidePage";
 import ArtistDetailPage from "./ArtistDetailPage";
 import { formatConcern, getSingerCover } from "../../utils/helper";
+import { SkeletonGrid } from "../../components/SkeletonCard";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 export default function ArtistPage() {
   const [categories, setCategories] = useState(null);
@@ -21,7 +23,7 @@ export default function ArtistPage() {
 
   const [currentArtist, setCurrentArtist] = useState(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadCategories();
@@ -48,7 +50,9 @@ export default function ArtistPage() {
   const loadArtistList = async () => {
     try {
 
-      setLoading(true);
+      if (page > 1) {
+        setLoading(true);
+      }
 
       const res = await GetArtistListByFilters(page, area, genre, sex, index);
       const data = typeof res === "string" ? JSON.parse(res) : res;
@@ -77,12 +81,16 @@ export default function ArtistPage() {
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden p-4">
-      {loading && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-[999] flex flex-col items-center justify-center pointer-events-none">
-          <div className="animate-spin w-8 h-8 border-4 border-warm-primary border-t-transparent rounded-full"></div>
-          <p className="text-sm text-warm-subtext mt-2">加载中...</p>
+      {/* 首屏加载骨架屏 */}
+      {loading && singerList.length === 0 && (
+        <div className="w-full h-full overflow-y-auto">
+          <div className="mb-4 p-4 bg-gray-100 rounded-xl h-32 animate-pulse"></div>
+          <SkeletonGrid columns={5} count={15} />
         </div>
       )}
+
+      {/* 分页加载 Loading Spinner */}
+      {loading && singerList.length > 0 && <LoadingSpinner />}
 
 
       {/* 分类筛选 */}
