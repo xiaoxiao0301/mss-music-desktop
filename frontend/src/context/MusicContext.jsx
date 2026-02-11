@@ -1,6 +1,17 @@
 import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { GetAudioProxyURL } from "../../wailsjs/go/backend/AudioBridge";
 import { message } from "antd";
+import { normalizeJson, parseLRC } from "../utils/helper";
 import { AddFavorite, RemoveFavorite, GetFavoriteSongs } from "../../wailsjs/go/backend/FavoriteBridge";
+import { GetSongLyrics, GetSongPlayURL } from "../../wailsjs/go/backend/SongBridge";
+import { AddPlayHistory } from "../../wailsjs/go/backend/PlayHistoryBridge";
+import {
+  AddSongToUserPlaylist,
+  CreateUserPlaylist,
+  GetUserPlaylistDetail,
+  GetUserPlaylists,
+  RemoveSongFromUserPlaylist,
+} from "../../wailsjs/go/backend/PlaylistBridge";
 
 const FavoriteContext = createContext();
 const MusicPlayerContext = createContext();
@@ -157,6 +168,7 @@ export function FavoriteProvider({ children }) {
     <FavoriteContext.Provider
       value={{
         likedSongs,
+        likedSongMids,
         isLiked,
         toggleLike,
 
@@ -181,6 +193,7 @@ export function FavoriteProvider({ children }) {
 
 // 音乐播放器Provider
 export function MusicPlayerProvider({ children }) {
+  const { addRecentPlay } = useContext(FavoriteContext);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [playQueue, setPlayQueue] = useState([]);
@@ -189,27 +202,347 @@ export function MusicPlayerProvider({ children }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(70);
   const [showLyrics, setShowLyrics] = useState(false);
+  const [showLyricsOverlay, setShowLyricsOverlay] = useState(false);
   const [repeatMode, setRepeatMode] = useState('off'); // 'off', 'all', 'one'
   const [shuffleMode, setShuffleMode] = useState(false);
   const audioRef = useRef(new Audio());
+  const pendingLoadRef = useRef(0);
+  const lastLoadedRef = useRef({ key: null, url: null });
+  const urlCacheRef = useRef(new Map());
+  const lyricsCacheRef = useRef(new Map());
+  const lyricsLoadingRef = useRef(new Map());
+  const prefetchingRef = useRef(new Map());
+  const lastErrorTrackRef = useRef(null);
+
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [playlistSongs, setPlaylistSongs] = useState({});
+  const [playlistPickerSong, setPlaylistPickerSong] = useState(null);
+  const [playlistLoading, setPlaylistLoading] = useState(false);
+
+  const shouldProxyAudio = (url) => {
+    if (!url) return false;
+    const clean = url.split("?")[0].toLowerCase();
+    return clean.endsWith(".m4a") || clean.endsWith(".mp4");
+  };
+
+  const getTrackKey = (track) => track?.mid || track?.id;
+
+  const notifyTrackUnavailable = (track) => {
+    const name = track?.name ? `：${track.name}` : "";
+    message.warning(`已跳过无法播放的歌曲${name}`);
+  };
+
+  const resolveTrackUrl = async (track) => {
+    if (!track) return null;
+    if (track.url) return track;
+    const trackKey = getTrackKey(track);
+    if (!trackKey) return null;
+    if (urlCacheRef.current.has(trackKey)) {
+      return { ...track, url: urlCacheRef.current.get(trackKey) };
+    }
+    try {
+      const res = await GetSongPlayURL(track.mid);
+      const data = normalizeJson(res);
+      const url = data?.data?.url || "";
+      if (url) {
+        urlCacheRef.current.set(trackKey, url);
+        return { ...track, url };
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  };
+
+  const mergeTrackIntoQueue = (queue, updatedTrack) => {
+    const trackKey = getTrackKey(updatedTrack);
+    if (!trackKey || !Array.isArray(queue)) return queue || [];
+    return queue.map((item) => {
+      const itemKey = getTrackKey(item);
+      return itemKey === trackKey ? { ...item, ...updatedTrack } : item;
+    });
+  };
+
+  const loadLyricsForTrack = async (mid) => {
+    if (!mid) return { lyrics: [], transLyrics: [] };
+    try {
+      const res = await GetSongLyrics(mid);
+      const data = normalizeJson(res);
+      const lyricData = data?.data?.lyric;
+      const lyricText = typeof lyricData === "string" ? lyricData : lyricData?.lyric;
+      const transText = typeof lyricData === "object" ? lyricData?.trans : data?.data?.trans;
+      const lyrics = lyricText ? parseLRC(lyricText) : [];
+      const transLyrics = transText ? parseLRC(transText) : [];
+      return { lyrics, transLyrics };
+    } catch (err) {
+      return { lyrics: [], transLyrics: [] };
+    }
+  };
+
+  const ensureLyrics = async (track) => {
+    const trackKey = track?.mid || track?.id;
+    if (!trackKey) return;
+
+    const hasLyrics = Array.isArray(track.lyrics) && track.lyrics.length > 0;
+    const hasTrans = Array.isArray(track.transLyrics) && track.transLyrics.length > 0;
+    if (hasLyrics || hasTrans) {
+      if (!lyricsCacheRef.current.has(trackKey)) {
+        lyricsCacheRef.current.set(trackKey, {
+          lyrics: track.lyrics,
+          transLyrics: track.transLyrics,
+        });
+      }
+      return;
+    }
+
+    if (lyricsCacheRef.current.has(trackKey)) {
+      const cached = lyricsCacheRef.current.get(trackKey);
+      setCurrentTrack((prev) => {
+        if (!prev || (prev.mid || prev.id) !== trackKey) return prev;
+        const prevHasLyrics = Array.isArray(prev.lyrics) && prev.lyrics.length > 0;
+        const prevHasTrans = Array.isArray(prev.transLyrics) && prev.transLyrics.length > 0;
+        if (prevHasLyrics || prevHasTrans) return prev;
+        return { ...prev, ...cached };
+      });
+      return;
+    }
+
+    if (lyricsLoadingRef.current.has(trackKey)) {
+      await lyricsLoadingRef.current.get(trackKey);
+      return;
+    }
+
+    const pending = loadLyricsForTrack(trackKey)
+      .then((result) => {
+        lyricsCacheRef.current.set(trackKey, result);
+        setCurrentTrack((prev) => {
+          if (!prev || (prev.mid || prev.id) !== trackKey) return prev;
+          return { ...prev, ...result };
+        });
+        return result;
+      })
+      .finally(() => {
+        lyricsLoadingRef.current.delete(trackKey);
+      });
+
+    lyricsLoadingRef.current.set(trackKey, pending);
+    await pending;
+  };
+
+  const openLyrics = async () => {
+    if (!currentTrack) return;
+    await ensureLyrics(currentTrack);
+    setShowLyrics(true);
+  };
+
+  const openLyricsOverlay = async () => {
+    if (!currentTrack) return;
+    await ensureLyrics(currentTrack);
+    setShowLyricsOverlay(true);
+  };
 
   useEffect(() => {
     if (!currentTrack) return;
     const audio = audioRef.current;
-    audio.src = currentTrack.url;
-    audio.volume = volume / 100;
+    const trackKey = currentTrack.mid || currentTrack.id;
+    const trackUrl = currentTrack.url || "";
+    const isSameTrack =
+      lastLoadedRef.current.key === trackKey &&
+      lastLoadedRef.current.url === trackUrl;
+
     audio.onloadedmetadata = () => setDuration(audio.duration);
     audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
     audio.onended = handleTrackEnd;
-    if (isPlaying) audio.play();
+
+    if (!trackUrl) {
+      return;
+    }
+
+    if (isSameTrack) {
+      if (isPlaying) {
+        audio.play().catch(() => {});
+      }
+      return;
+    }
+
+    const loadId = pendingLoadRef.current + 1;
+    pendingLoadRef.current = loadId;
+    let cancelled = false;
+
+    const loadTrack = async () => {
+      let src = trackUrl;
+      const useProxy = shouldProxyAudio(src);
+      if (useProxy) {
+        try {
+          src = await GetAudioProxyURL(src);
+        } catch (err) {
+          src = trackUrl;
+        }
+      }
+      if (cancelled || pendingLoadRef.current !== loadId) return;
+      lastLoadedRef.current = { key: trackKey, url: trackUrl };
+
+      let didFallback = false;
+      audio.onerror = () => {
+        if (didFallback || !useProxy || !trackUrl) {
+          if (lastErrorTrackRef.current !== trackKey) {
+            lastErrorTrackRef.current = trackKey;
+            notifyTrackUnavailable(currentTrack);
+            playNext();
+          }
+          return;
+        }
+        didFallback = true;
+        audio.src = trackUrl;
+        if (isPlaying) {
+          audio.play().catch(() => {});
+        }
+      };
+
+      audio.src = src;
+      audio.volume = volume / 100;
+      if (isPlaying) {
+        audio.play().catch(() => {});
+      }
+    };
+
+    loadTrack();
+
     return () => {
+      cancelled = true;
       audio.pause();
     };
-  }, [currentTrack]);
+  }, [currentTrack, isPlaying]);
 
   useEffect(() => {
     audioRef.current.volume = volume / 100;
   }, [volume]);
+
+  useEffect(() => {
+    if (!playQueue.length) return;
+    const prefetchNext = async () => {
+      const total = playQueue.length;
+      if (!total) return;
+      let nextIndex = null;
+
+      if (shuffleMode) {
+        if (total === 1) return;
+        nextIndex = Math.floor(Math.random() * total);
+        if (nextIndex === currentIndex) {
+          nextIndex = (currentIndex + 1) % total;
+        }
+      } else {
+        if (repeatMode !== 'all' && currentIndex >= total - 1) return;
+        nextIndex = (currentIndex + 1) % total;
+      }
+
+      const nextTrack = playQueue[nextIndex];
+      const trackKey = getTrackKey(nextTrack);
+      if (!trackKey || nextTrack?.url) return;
+      if (prefetchingRef.current.has(trackKey)) return;
+
+      const pending = resolveTrackUrl(nextTrack)
+        .then((resolved) => {
+          if (!resolved?.url) return;
+          setPlayQueue((prev) => mergeTrackIntoQueue(prev, resolved));
+        })
+        .finally(() => {
+          prefetchingRef.current.delete(trackKey);
+        });
+
+      prefetchingRef.current.set(trackKey, pending);
+      await pending;
+    };
+
+    prefetchNext();
+  }, [currentIndex, playQueue, shuffleMode, repeatMode]);
+
+  const loadUserPlaylists = async () => {
+    try {
+      const res = await GetUserPlaylists();
+      const data = normalizeJson(res);
+      if (data.code !== 20000) {
+        return;
+      }
+      setUserPlaylists(data.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const loadUserPlaylistDetail = async (playlistID) => {
+    if (!playlistID) return;
+    setPlaylistLoading(true);
+    try {
+      const res = await GetUserPlaylistDetail(playlistID);
+      const data = normalizeJson(res);
+      if (data.code !== 20000) {
+        return;
+      }
+      setPlaylistSongs((prev) => ({
+        ...prev,
+        [playlistID]: data.data?.songs || [],
+      }));
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setPlaylistLoading(false);
+    }
+  };
+
+  const openPlaylistPicker = (song) => {
+    console.log('click', song)
+    setPlaylistPickerSong(song);
+    loadUserPlaylists();
+  };
+
+  const closePlaylistPicker = () => {
+    setPlaylistPickerSong(null);
+  };
+
+  const createUserPlaylist = async (name, description = "") => {
+    if (!name) return;
+    try {
+      const res = await CreateUserPlaylist(name, description, "");
+      const data = normalizeJson(res);
+      if (data.code === 20000) {
+        await loadUserPlaylists();
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const addSongToUserPlaylist = async (playlistID, song) => {
+    if (!playlistID || !song) return;
+    try {
+      await AddSongToUserPlaylist(playlistID, {
+        song_mid: song.mid,
+        song_name: song.name,
+        song_artist: song.artist,
+        song_album: song.albumname || song.album || "",
+        song_cover: song.cover,
+        duration: song.duration || 0,
+      });
+      await loadUserPlaylistDetail(playlistID);
+      message.success("已添加到歌单");
+    } catch (err) {
+      console.log(err);
+      message.error("添加失败");
+    }
+  };
+
+  const removeSongFromUserPlaylist = async (playlistID, songMid) => {
+    if (!playlistID || !songMid) return;
+    try {
+      await RemoveSongFromUserPlaylist(playlistID, songMid);
+      await loadUserPlaylistDetail(playlistID);
+      message.success("已移除");
+    } catch (err) {
+      console.log(err);
+      message.error("移除失败");
+    }
+  };
 
   const handleTrackEnd = () => {
     if (repeatMode === 'one') {
@@ -232,32 +565,88 @@ export function MusicPlayerProvider({ children }) {
     setIsPlaying(!isPlaying);
   };
 
+  const playFromQueueIndex = async (startIndex, direction = 1, queueOverride = null) => {
+    const queue = queueOverride || playQueue;
+    const total = queue.length;
+    if (!total) return false;
+
+    let attempts = 0;
+    let index = startIndex;
+    const tried = new Set();
+
+    while (attempts < total) {
+      if (index == null || index < 0 || index >= total) break;
+      if (tried.has(index)) break;
+      tried.add(index);
+      const target = queue[index];
+      const resolved = await resolveTrackUrl(target);
+      if (resolved?.url) {
+        const nextQueue = mergeTrackIntoQueue(queue, resolved);
+        playTrack(resolved, nextQueue, index);
+        return true;
+      }
+      notifyTrackUnavailable(target);
+      attempts += 1;
+
+      if (shuffleMode) {
+        if (total === 1) break;
+        index = Math.floor(Math.random() * total);
+      } else if (direction > 0) {
+        if (index < total - 1) {
+          index += 1;
+        } else if (repeatMode === 'all') {
+          index = 0;
+        } else {
+          break;
+        }
+      } else {
+        if (index > 0) {
+          index -= 1;
+        } else if (repeatMode === 'all') {
+          index = total - 1;
+        } else {
+          break;
+        }
+      }
+    }
+
+    message.error("没有可播放的歌曲");
+    setIsPlaying(false);
+    return false;
+  };
+
   const playNext = () => {
-    let nextIndex;
+    if (!playQueue.length) return;
+    if (!shuffleMode && repeatMode !== 'all' && currentIndex >= playQueue.length - 1) {
+      setIsPlaying(false);
+      return;
+    }
+    let nextIndex = null;
     if (shuffleMode) {
       nextIndex = Math.floor(Math.random() * playQueue.length);
     } else {
       nextIndex = (currentIndex + 1) % playQueue.length;
     }
-    setCurrentIndex(nextIndex);
-    setCurrentTrack(playQueue[nextIndex]);
-    setIsPlaying(true);
+    playFromQueueIndex(nextIndex, 1);
   };
 
   const playPrev = () => {
-    let prevIndex;
+    if (!playQueue.length) return;
     if (currentTime > 3) {
       audioRef.current.currentTime = 0;
       return;
     }
+    if (!shuffleMode && repeatMode !== 'all' && currentIndex <= 0) {
+      audioRef.current.currentTime = 0;
+      return;
+    }
+    let prevIndex = null;
     if (shuffleMode) {
       prevIndex = Math.floor(Math.random() * playQueue.length);
     } else {
       prevIndex = (currentIndex - 1 + playQueue.length) % playQueue.length;
     }
-    setCurrentIndex(prevIndex);
-    setCurrentTrack(playQueue[prevIndex]);
-    setIsPlaying(true);
+    playFromQueueIndex(prevIndex, -1);
   };
 
   const seekTo = (value) => {
@@ -265,29 +654,65 @@ export function MusicPlayerProvider({ children }) {
     setCurrentTime(value);
   };
 
-  const playTrack = (track, queue = null) => {
+  const playTrack = (track, queue = null, indexOverride = null) => {
     if (queue) {
-      setPlayQueue(queue);
       const index = queue.findIndex(t => t.id === track.id);
-      setCurrentIndex(index >= 0 ? index : 0);
-    } else {
-      const index = playQueue.findIndex(t => t.id === track.id);
+      const nextQueue = [...queue];
       if (index >= 0) {
-        setCurrentIndex(index);
-      } else {
-        setPlayQueue([track, ...playQueue]);
-        setCurrentIndex(0);
+        nextQueue[index] = track;
       }
+      setPlayQueue(nextQueue);
+      const nextIndex = indexOverride ?? (index >= 0 ? index : 0);
+      setCurrentIndex(nextIndex);
+    } else {
+      setPlayQueue([track]);
+      setCurrentIndex(0);
     }
     setCurrentTrack(track);
     setIsPlaying(true);
+    addRecentPlay?.(track);
+    if (track?.mid) {
+      AddPlayHistory(track.mid, track.duration || 0).catch(() => {});
+    }
+  };
+
+  const playTrackWithURL = async (track, queue = null) => {
+    if (!track) return;
+    const resolved = await resolveTrackUrl(track);
+    if (!resolved?.url) {
+      message.error("未获取到播放地址");
+      return;
+    }
+    const nextQueue = queue ? mergeTrackIntoQueue(queue, resolved) : null;
+    playTrack(resolved, nextQueue);
+  };
+
+  const playQueueFromList = async (queue, startIndex = 0) => {
+    if (!Array.isArray(queue) || queue.length === 0) return;
+    const safeIndex = Math.min(Math.max(startIndex, 0), queue.length - 1);
+    setPlayQueue(queue);
+    await playFromQueueIndex(safeIndex, 1, queue);
   };
 
   const pauseTrack = () => {
     const audio = audioRef.current;
     audio.pause();
     setIsPlaying(false);
-  }
+  };
+
+  const resumeTrack = () => {
+    const audio = audioRef.current;
+    audio.play().catch(() => {});
+    setIsPlaying(true);
+  };
+
+  const stopTrack = () => {
+    const audio = audioRef.current;
+    audio.pause();
+    audio.currentTime = 0;
+    setCurrentTime(0);
+    setIsPlaying(false);
+  };
 
   const toggleRepeat = () => {
     const modes = ['off', 'all', 'one'];
@@ -314,6 +739,7 @@ export function MusicPlayerProvider({ children }) {
         duration,
         volume,
         showLyrics,
+        showLyricsOverlay,
         repeatMode,
         shuffleMode,
         togglePlay,
@@ -322,12 +748,31 @@ export function MusicPlayerProvider({ children }) {
         seekTo,
         setVolume,
         playTrack,
+        playTrackWithURL,
+        playQueueFromList,
         pauseTrack,
+        resumeTrack,
+        stopTrack,
         setShowLyrics,
+        setShowLyricsOverlay,
+        openLyrics,
+        openLyricsOverlay,
+        ensureLyrics,
         toggleRepeat,
         toggleShuffle,
         formatTime,
-        audioRef
+        audioRef,
+        userPlaylists,
+        playlistSongs,
+        playlistPickerSong,
+        playlistLoading,
+        loadUserPlaylists,
+        loadUserPlaylistDetail,
+        openPlaylistPicker,
+        closePlaylistPicker,
+        createUserPlaylist,
+        addSongToUserPlaylist,
+        removeSongFromUserPlaylist
       }}
     >
       {children}

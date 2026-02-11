@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { GetPlaylistCategoriesListDetail } from "../../../wailsjs/go/backend/PlaylistBridge";
-import { AddFavorite, RemoveFavorite } from "../../../wailsjs/go/backend/FavoriteBridge";
+import { AddFavorite, RemoveFavorite, GetFavoritePlaylists } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { message } from "antd";
 import { fixUrl, formatPlaylistAuthor, formatNumber, getCoverUrl, normalizeJson } from "../../utils/helper";
 import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
@@ -8,13 +8,12 @@ import SongListDesktop from "../../components/SongList";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 export default function PlaylistDetailPage({ playlistId, initialData, onBack, pushPage }) {
-  console.log("PlaylistDetailPage initialized with ID:", playlistId, "Initial Data:", initialData, "onBack:", onBack);
   const realID = playlistId;
   const [detail, setDetail] = useState(initialData || null);
   const [loading, setLoading] = useState(!initialData);
   const [isPlaylistFavorited, setIsPlaylistFavorited] = useState(false);
 
-  const { playTrack } = useMusicPlayer();
+  const { playTrackWithURL, playQueueFromList } = useMusicPlayer();
   const { isLiked, toggleLike } = useFavorite();
 
   useEffect(() => {
@@ -36,9 +35,8 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack, pu
         setIsPlaylistFavorited(false);
         return;
       }
-      // 通过本地存储检查
-      const favoritedKey = `playlist_${disstid}_favorited`;
-      const isFav = localStorage.getItem(favoritedKey) === "true";
+      const favorites = await GetFavoritePlaylists();
+      const isFav = (favorites || []).includes(String(disstid));
       setIsPlaylistFavorited(isFav);
     } catch (error) {
       console.error("Failed to check if favorited:", error);
@@ -68,7 +66,6 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack, pu
         message.error("获取歌单分类详情失败");
         return;
       }
-      console.log("Playlist Detail:", data.data); 
       setDetail(data.data);
     } catch (err) {
       console.error(err);
@@ -84,18 +81,24 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack, pu
       if (isPlaylistFavorited) {
         await RemoveFavorite(detail.disstid, "playlist");
         setIsPlaylistFavorited(false);
-        localStorage.removeItem(`playlist_${detail.disstid}_favorited`);
         message.success("取消收藏");
       } else {
         await AddFavorite(detail.disstid, "playlist");
         setIsPlaylistFavorited(true);
-        localStorage.setItem(`playlist_${detail.disstid}_favorited`, "true");
         message.success("收藏成功");
       }
     } catch (error) {
       console.error("Failed to toggle favorite:", error);
       message.error("操作失败");
     }
+  };
+
+  const handlePlayAll = async () => {
+    if (!normalizedSongs.length) {
+      message.warning("歌单暂无歌曲");
+      return;
+    }
+    await playQueueFromList(normalizedSongs, 0);
   };
 
   if (loading) return <PlaylistDetailSkeleton />;
@@ -119,12 +122,17 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack, pu
       <StatsSection detail={detail} />
 
       {/* ActionBar */}
-      <ActionBar isPlaylistFavorited={isPlaylistFavorited} onToggleFavorite={handleToggleFavorite} />
+      <ActionBar
+        isPlaylistFavorited={isPlaylistFavorited}
+        onToggleFavorite={handleToggleFavorite}
+        onPlayAll={handlePlayAll}
+        canPlayAll={normalizedSongs.length > 0}
+      />
 
       {/* 歌曲列表 */}
       <SongListDesktop
         songs={normalizedSongs}
-        onPlay={(song) => playTrack(song, normalizedSongs)}
+        onPlay={(song) => playTrackWithURL(song)}
         onLike={(song) => toggleLike(song)}
         likedChecker={(id) => isLiked(id)}
         onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
@@ -180,10 +188,18 @@ function StatsSection({ detail }) {
 
 /* ---------------- ActionBar ---------------- */
 
-function ActionBar({ isPlaylistFavorited, onToggleFavorite }) {
+function ActionBar({ isPlaylistFavorited, onToggleFavorite, onPlayAll, canPlayAll }) {
   return (
     <div className="flex gap-4 px-4 py-3 border-b border-[#EDE7E2] bg-white">
-      <button className="px-4 py-2 rounded-lg bg-[#FF8A3D] text-white shadow hover:bg-[#FF7A1F]">
+      <button
+        onClick={onPlayAll}
+        disabled={!canPlayAll}
+        className={`px-4 py-2 rounded-lg shadow ${
+          canPlayAll
+            ? "bg-[#FF8A3D] text-white hover:bg-[#FF7A1F]"
+            : "bg-[#FFE8D6] text-[#6B6B6B] cursor-not-allowed"
+        }`}
+      >
         播放全部
       </button>
 

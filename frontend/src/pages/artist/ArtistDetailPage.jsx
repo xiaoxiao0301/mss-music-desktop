@@ -26,7 +26,7 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
   // 当前 Tab：intro / songs / albums / mv
   const [tab, setTab] = useState("intro");
 
-  const { playTrack } = useMusicPlayer();
+  const { playTrackWithURL } = useMusicPlayer();
   const { isLiked, toggleLike } = useFavorite();
 
   useEffect(() => {
@@ -333,7 +333,7 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
             <div className="mb-4">
               <SongListDesktop
                 songs={normalizedSongs}
-                onPlay={(song) => playTrack(song, normalizedSongs)}
+                onPlay={(song) => playTrackWithURL(song)}
                 onLike={(song) => toggleLike(song)}
                 likedChecker={(id) => isLiked(id)}
                 onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}

@@ -151,16 +151,6 @@ func (c *APIClient) Get(path string) ([]byte, error) {
     return c.doRequest("GET", url, nil, RequestOptions{WithToken: true})
 }
 
-func (c *APIClient) GetWithOptions(path string, opt RequestOptions) ([]byte, error) {
-    sep := "?"
-    if strings.Contains(path, "?") {
-        sep = "&"
-    }
-    url := path + sep + "device_id=" + c.deviceID + "&platform=" + c.platform
-    return c.doRequest("GET", url, nil, opt)
-}
-
-
 func (c *APIClient) PostAuth(path string, body any) ([]byte, error) {
     merged := map[string]any{
         "device_id": c.deviceID,
@@ -186,7 +176,7 @@ func (c *APIClient) Post(path string, body any) ([]byte, error) {
     return c.doRequest("POST", path, merged, RequestOptions{WithToken: false})
 }
 
-func (c *APIClient) PostWithOptions(path string, body any, opt RequestOptions) ([]byte, error) {
+func (c *APIClient) PatchAuth(path string, body any) ([]byte, error) {
     merged := map[string]any{
         "device_id": c.deviceID,
         "platform":  c.platform,
@@ -195,10 +185,10 @@ func (c *APIClient) PostWithOptions(path string, body any, opt RequestOptions) (
         b, _ := json.Marshal(body) 
         json.Unmarshal(b, &merged) 
     }
-    return c.doRequest("POST", path, merged, opt)
+    return c.doRequest("PATCH", path, merged, RequestOptions{WithToken: true})
 }
 
-func (c *APIClient) Delete(path string, body any, opt RequestOptions) ([]byte, error) {
+func (c *APIClient) Delete(path string, body any) ([]byte, error) {
     merged := map[string]any{
         "device_id": c.deviceID,
         "platform":  c.platform,
@@ -207,5 +197,5 @@ func (c *APIClient) Delete(path string, body any, opt RequestOptions) ([]byte, e
         b, _ := json.Marshal(body) 
         json.Unmarshal(b, &merged) 
     }
-    return c.doRequest("DELETE", path, merged, opt)
+    return c.doRequest("DELETE", path, merged, RequestOptions{WithToken: true})
 }

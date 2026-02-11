@@ -9,7 +9,7 @@ import { getCoverUrl } from "../../utils/helper";
 export default function RadioDetailPage({ radio, onBack, pushPage }) {
   const [songList, setSongList] = useState(null);
   const { isLiked, toggleLike } = useFavorite();
-  const { playTrack } = useMusicPlayer();
+  const { playTrackWithURL } = useMusicPlayer();
 
   useEffect(() => {
     if (!radio) return;
@@ -83,7 +83,7 @@ export default function RadioDetailPage({ radio, onBack, pushPage }) {
         {normalizedSongs.length > 0 && (
           <SongListDesktop
             songs={normalizedSongs}
-            onPlay={(song) => playTrack(song, normalizedSongs)}
+            onPlay={(song) => playTrackWithURL(song)}
             onLike={(song) => toggleLike(song)}
             likedChecker={(id) => isLiked(id)}
             onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}

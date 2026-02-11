@@ -61,25 +61,33 @@ export function formatSize(bytes) {
 export function parseLRC(lrcText) {
   if (!lrcText) return [];
 
-  const lines = lrcText.split("\n");
+  const normalized = lrcText.replace(/↵/g, "\n").replace(/\r/g, "");
+  const lines = normalized.split("\n");
   const result = [];
-
-  const timeReg = /\[(\d{2}):(\d{2}\.\d{2})]/;
+  const timeReg = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?]/g;
 
   for (const line of lines) {
-    const match = timeReg.exec(line);
-    if (!match) continue;
+    let match;
+    const times = [];
 
-    const min = parseInt(match[1]);
-    const sec = parseFloat(match[2]);
-    const time = min * 60 + sec;
+    while ((match = timeReg.exec(line)) !== null) {
+      const min = parseInt(match[1], 10);
+      const sec = parseInt(match[2], 10);
+      const msRaw = match[3] || "0";
+      const ms = parseInt(msRaw.padEnd(3, "0"), 10);
+      const time = min * 60 + sec + ms / 1000;
+      times.push(time);
+    }
+
+    if (times.length === 0) continue;
 
     const text = line.replace(timeReg, "").trim();
-
-    result.push({ time, text });
+    for (const time of times) {
+      result.push({ time, text });
+    }
   }
 
-  return result;
+  return result.sort((a, b) => a.time - b.time);
 }
 
 export function formatNumber(num) {

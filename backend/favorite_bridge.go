@@ -25,7 +25,7 @@ func (f *FavoriteBridge) AddFavorite(targetID, targetType string) error {
 		TargetID:   targetID,
 		TargetType: targetType,
 	}
-	_, err := f.apiClient.PostWithOptions(GetAddFavoritePath(), req, RequestOptions{WithToken: true})
+	_, err := f.apiClient.PostAuth(GetAddFavoritePath(), req)
 	return err
 }
 
@@ -35,13 +35,13 @@ func (f *FavoriteBridge) RemoveFavorite(targetID, targetType string) error {
 		TargetID:   targetID,
 		TargetType: targetType,
 	}
-	_, err := f.apiClient.Delete(GetRemoveFavoritePath(), req, RequestOptions{WithToken: true})
+	_, err := f.apiClient.Delete(GetRemoveFavoritePath(), req)
 	return err
 }
 
 // GetFavorites 获取收藏列表
 func (f *FavoriteBridge) GetFavorites(targetType string) (string, error) {
-	resp, err := f.apiClient.GetWithOptions(GetFavoritesPath(targetType), RequestOptions{WithToken: true})
+	resp, err := f.apiClient.Get(GetFavoritesPath(targetType))
 	if err != nil {
 		return "", err
 	}

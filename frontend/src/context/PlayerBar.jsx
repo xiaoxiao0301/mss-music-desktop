@@ -11,7 +11,7 @@ export default function PlayerBar({
   seekTo,
   volume,
   setVolume,
-  setShowLyrics,
+  openLyrics,
   formatTime
 }) {
   const { isLiked, toggleLike } = useFavorite();
@@ -41,7 +41,7 @@ export default function PlayerBar({
           </button>
           <button onClick={playNext} className="text-2xl">⏭️</button>
 
-          <button onClick={() => setShowLyrics(true)} className="text-xl">📃</button>
+          <button onClick={openLyrics} className="text-xl">📃</button>
         </div>
 
         <div className="flex items-center gap-2 w-full">

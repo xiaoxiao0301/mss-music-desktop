@@ -1,4 +1,5 @@
 import { PlayCircleOutlined, PlusOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
+import { useMusicPlayer } from "../context/MusicContext";
 
 export default function SongListDesktop({
   songs = [],
@@ -7,7 +8,11 @@ export default function SongListDesktop({
   likedChecker,
   onSongClick,  // 新增：点击歌曲跳转
   onAlbumClick, // 新增：点击专辑跳转
+  onAddToPlaylist,
 }) {
+  const { openPlaylistPicker, playTrackWithURL } = useMusicPlayer();
+  const handleAddToPlaylist = onAddToPlaylist || openPlaylistPicker;
+  const handlePlay = onPlay || ((song) => playTrackWithURL(song));
   return (
     <div className="w-full mt-4 px-4">
       {/* 表头 */}
@@ -72,7 +77,7 @@ export default function SongListDesktop({
                 {/* 播放 */}
                 <PlayCircleOutlined
                   className="text-[#FF8A3D] text-xl cursor-pointer hover:scale-110 transition-transform"
-                  onClick={() => onPlay?.(song)}
+                  onClick={() => handlePlay(song)}
                 />
 
                 {/* 收藏 */}
@@ -91,6 +96,7 @@ export default function SongListDesktop({
                 {/* 添加 */}
                 <PlusOutlined
                   className="text-[#6B6B6B] text-lg cursor-pointer hover:text-[#FF8A3D] hover:scale-110 transition-transform"
+                  onClick={() => handleAddToPlaylist?.(song)}
                 />
               </div>
             </div>

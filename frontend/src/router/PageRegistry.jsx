@@ -1,6 +1,7 @@
 import DiscoverPage from "../pages/DiscoverPage";
 import PlaylistCategoryPage from "../pages/playlist/PlaylistCategoryPage";
 import PlaylistDetailPage from "../pages/playlist/PlaylistDetailPage";
+import MyPlaylistsPage from "../pages/playlist/MyPlaylistsPage";
 import SongDetailPage from "../pages/song/SongDetailPage";
 import AlbumDetailPage from "../pages/album/AlbumDetailPage";
 import RankPage from "../pages/rank/RankPage";
@@ -21,6 +22,7 @@ export const PageRegistry = {
   home: DiscoverPage,
   playlistCategory: PlaylistCategoryPage,
   playlistDetail: PlaylistDetailPage,
+  myPlaylists: MyPlaylistsPage,
   songDetail: SongDetailPage,
   albumDetail: AlbumDetailPage,
   rank: RankPage,

@@ -121,14 +121,15 @@ function Sidebar({ currentPage, switchRootPage }) {
 
         <SectionTitle collapsed={collapsed}>我的音乐</SectionTitle>
         <NavItem label="喜欢的音乐" active={currentPage === "liked"} collapsed={collapsed} onClick={() => switchRootPage("liked")} />
+        <NavItem label="我的歌单" active={currentPage === "myPlaylists"} collapsed={collapsed} onClick={() => switchRootPage("myPlaylists")} />
         <NavItem label="收藏的歌单" active={currentPage === "fav-playlist"} collapsed={collapsed} onClick={() => switchRootPage("fav-playlist")} />  
         <NavItem label="收藏的专辑" active={currentPage === "fav-album"} collapsed={collapsed} onClick={() => switchRootPage("fav-album")} />
         <NavItem label="关注的歌手" active={currentPage === "fav-artist"} collapsed={collapsed} onClick={() => switchRootPage("fav-artist")} />
         <NavItem label="最近播放" active={currentPage === "recent"} collapsed={collapsed} onClick={() => switchRootPage("recent")} />
 
-        <SectionTitle collapsed={collapsed}>其他</SectionTitle>
+        {/* <SectionTitle collapsed={collapsed}>其他</SectionTitle>
         <NavItem label="本地与下载" active={currentPage === "local"} collapsed={collapsed} onClick={() => switchRootPage("local")} />
-        <NavItem label="设置" active={currentPage === "settings"} collapsed={collapsed} onClick={() => switchRootPage("settings")} />
+        <NavItem label="设置" active={currentPage === "settings"} collapsed={collapsed} onClick={() => switchRootPage("settings")} /> */}
       </div>
 
       {/* 底部标语 */}

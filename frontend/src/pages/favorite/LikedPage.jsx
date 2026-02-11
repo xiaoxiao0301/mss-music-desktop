@@ -7,14 +7,22 @@ import SongListDesktop from "../../components/SongList";
 import { getCoverUrl } from "../../utils/helper";
 
 export default function LikedPage({ pushPage }) {
-  const { isLiked, toggleLike } = useFavorite();
-  const { playTrack } = useMusicPlayer();
+  const { likedSongMids, toggleLike } = useFavorite();
+  const { playTrackWithURL } = useMusicPlayer();
   const [loading, setLoading] = useState(true);
   const [songs, setSongs] = useState([]);
 
   useEffect(() => {
     loadFavoriteSongs();
   }, []);
+
+  // 监听 context 中的 likedSongMids 变化，如果有变化则重新加载列表
+  useEffect(() => {
+    // 只有在初始列表都加载完后才监听变化
+    if (songs.length > 0 || loading === false) {
+      loadFavoriteSongs();
+    }
+  }, [likedSongMids.length]);
 
   const loadFavoriteSongs = async () => {
     try {
@@ -69,12 +77,12 @@ export default function LikedPage({ pushPage }) {
       {!loading && songs.length > 0 && (
         <SongListDesktop
           songs={songs}
-          onPlay={(song) => playTrack(song, songs)}
+          onPlay={(song) => playTrackWithURL(song)}
           onLike={(song) => {
             toggleLike(song);
             setSongs(songs.filter(s => s.mid !== song.mid));
           }}
-          likedChecker={(mid) => isLiked(mid)}
+          likedChecker={() => true}
           onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
           onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
         />

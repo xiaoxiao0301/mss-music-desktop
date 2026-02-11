@@ -1,10 +1,8 @@
 package backend
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"math/rand"
+    "encoding/json"
+    "log"
 )
 
 type AuthBridge struct {
@@ -22,9 +20,11 @@ type AuthMeResponse struct {
 } 
 
 type UserDTO struct {
-    ID int `json:"ID"` 
-    Phone string `json:"Phone"` 
-    CreatedAt string `json:"CreatedAt"` 
+    ID        int    `json:"ID"`
+    Phone     string `json:"Phone"`
+    Avatar    string `json:"avatar"`
+    Nickname  string `json:"nickname"`
+    CreatedAt string `json:"CreatedAt"`
     UpdatedAt string `json:"UpdatedAt"`
 }
 
@@ -75,21 +75,18 @@ func (a *AuthBridge) Login(phone string, code string) (int, error) {
 
     a.tokenStore.Save(result.Data.AccessToken, result.Data.RefreshToken)
 
-    // 检查用户是否已有个人资料，仅第一次登录时生成随机头像与昵称
+    // 使用服务端返回的用户资料（如为空则保留本地已有的资料）
     existingProfile, _ := a.tokenStore.LoadUserProfile(result.Data.User.ID)
-    var avatar, nickname string
-    
-    if existingProfile == nil {
-        // 首次登录，生成随机头像与昵称
-        avatar = fmt.Sprintf("https://i.pravatar.cc/100?img=%d", rand.Intn(70)) 
-        nickname = []string{"小明", "阿杰", "星河旅人", "音乐探索者", "夜行者"}[rand.Intn(5)]
-    } else {
-        // 使用已有的个人资料
+    avatar := result.Data.User.Avatar
+    nickname := result.Data.User.Nickname
+    if avatar == "" && existingProfile != nil {
         avatar = existingProfile.Avatar
+    }
+    if nickname == "" && existingProfile != nil {
         nickname = existingProfile.Nickname
     }
 
-    a.tokenStore.SaveUserProfile(result.Data.User.ID, UserProfile{ Avatar: avatar, Nickname: nickname, })
+    a.tokenStore.SaveUserProfile(result.Data.User.ID, UserProfile{Avatar: avatar, Nickname: nickname})
 
     return result.Data.User.ID, nil
 }

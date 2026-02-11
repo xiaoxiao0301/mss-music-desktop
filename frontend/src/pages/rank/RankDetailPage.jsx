@@ -14,7 +14,7 @@ export default function RankDetailPage({ topId, onBack, pushPage }) {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const { isLiked, toggleLike } = useFavorite();
-  const { playTrack } = useMusicPlayer();
+  const { playTrackWithURL, playQueueFromList } = useMusicPlayer();
   const scrollRef = useRef(null);
 
   // Reset pagination when switching to a new榜单
@@ -97,6 +97,14 @@ export default function RankDetailPage({ topId, onBack, pushPage }) {
     }));
   }, [rankData]);
 
+  const handlePlayAll = async () => {
+    if (!normalizedSongs.length) {
+      message.warning("暂无歌曲可播放");
+      return;
+    }
+    await playQueueFromList(normalizedSongs, 0);
+  };
+
 
   if (initialLoading) {
     return (
@@ -161,8 +169,13 @@ export default function RankDetailPage({ topId, onBack, pushPage }) {
         {/* 播放全部按钮 */}
         <div className="mt-4">
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-warm-primary text-white rounded-lg hover:bg-warm-primary/90 transition"
-            onClick={() => console.log("播放全部")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+              normalizedSongs.length
+                ? "bg-warm-primary text-white hover:bg-warm-primary/90"
+                : "bg-gray-200 text-gray-500 cursor-not-allowed"
+            }`}
+            onClick={handlePlayAll}
+            disabled={!normalizedSongs.length}
           >
             {/* 圆形播放按钮 SVG（与你播放器一致） */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -182,7 +195,7 @@ export default function RankDetailPage({ topId, onBack, pushPage }) {
 
         <SongListDesktop
           songs={normalizedSongs}
-          onPlay={(song) => playTrack(song, normalizedSongs)}
+          onPlay={(song) => playTrackWithURL(song)}
           onLike={(song) => toggleLike(song)}
           likedChecker={(id) => isLiked(id)}
           onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}

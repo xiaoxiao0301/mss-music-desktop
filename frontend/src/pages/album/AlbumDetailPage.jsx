@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { message } from "antd";
 import { GetAlbumDetailAndSongLists } from "../../../wailsjs/go/backend/AlbumBridge";
-import { AddFavorite, RemoveFavorite } from "../../../wailsjs/go/backend/FavoriteBridge";
+import { AddFavorite, RemoveFavorite, GetFavoriteAlbums } from "../../../wailsjs/go/backend/FavoriteBridge";
 import { AlbumTypeMap, normalizeJson } from "../../utils/helper";
 import { getCoverUrl} from "../../utils/helper";
 import TopNavBar from "../../components/TopNavBar";
@@ -15,7 +15,7 @@ export default function AlbumDetailPage({ albumMid, onBack, pushPage }) {
   const [loading, setLoading] = useState(true);
   const [isAlbumFavorited, setIsAlbumFavorited] = useState(false);
 
-  const { playTrack } = useMusicPlayer();
+  const { playTrackWithURL } = useMusicPlayer();
   const { isLiked, toggleLike } = useFavorite();
 
   useEffect(() => {
@@ -56,8 +56,8 @@ export default function AlbumDetailPage({ albumMid, onBack, pushPage }) {
         setIsAlbumFavorited(false);
         return;
       }
-      const favoritedKey = `album_${albumMid}_favorited`;
-      const isFav = localStorage.getItem(favoritedKey) === "true";
+      const favorites = await GetFavoriteAlbums();
+      const isFav = (favorites || []).includes(String(albumMid));
       setIsAlbumFavorited(isFav);
     } catch (error) {
       console.error("Failed to check if favorited:", error);
@@ -70,12 +70,10 @@ export default function AlbumDetailPage({ albumMid, onBack, pushPage }) {
       if (isAlbumFavorited) {
         await RemoveFavorite(detail.basicInfo.albumMid, "album");
         setIsAlbumFavorited(false);
-        localStorage.removeItem(`album_${detail.basicInfo.albumMid}_favorited`);
         message.success("取消收藏");
       } else {
         await AddFavorite(detail.basicInfo.albumMid, "album");
         setIsAlbumFavorited(true);
-        localStorage.setItem(`album_${detail.basicInfo.albumMid}_favorited`, "true");
         message.success("收藏成功");
       }
     } catch (error) {
@@ -193,7 +191,7 @@ export default function AlbumDetailPage({ albumMid, onBack, pushPage }) {
           </div>
           <SongListDesktop
             songs={normalizedSongs}
-            onPlay={(song) => playTrack(song, normalizedSongs)}
+            onPlay={(song) => playTrackWithURL(song)}
             onLike={(song) => toggleLike(song)}
             likedChecker={(id) => isLiked(id)}
             onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}

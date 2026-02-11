@@ -30,6 +30,7 @@ const (
 	systemPlaylistCategoriesPath = "/playlist/types"
 	systemPlaylistCategoriesListPath = "/playlist/category/list"
 	systemPlaylistCategoriesListDetailPath = "/playlist/category/detail"
+	userPlaylistPath = "/playlist/user/list"
 
 	radioCategoriesPath = "/radio/categories"
 	radioCategoryListPath = "/radio/detail"
@@ -46,6 +47,7 @@ const (
 	songPlayPath  = "/song/play"
 	songLyricsPath = "/song/lyrics"
 	songDetailAndLyricsAndPlayURLPath = "/song/detail-lyrics-playurl"
+	playbackHistoryPath = "/recent/history"
 
 	favoritePath = "/favorites"
 )
@@ -110,6 +112,18 @@ func GetSystemPlaylistCategoriesListDetailPath(disstid string) string {
 	return fmt.Sprintf("%s%s?disstid=%s", apiBasePath, systemPlaylistCategoriesListDetailPath, disstid)
 }
 
+func GetUserPlaylistsPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, userPlaylistPath)
+}
+
+func GetUserPlaylistDetailPath(playlistID uint) string {
+	return fmt.Sprintf("%s%s/%d", apiBasePath, userPlaylistPath, playlistID)
+}
+
+func GetUserPlaylistSongPath(playlistID uint) string {
+	return fmt.Sprintf("%s%s/%d/song", apiBasePath, userPlaylistPath, playlistID)
+}
+
 func GetRadioCategoriesPath() string {
 	return fmt.Sprintf("%s%s", apiBasePath, radioCategoriesPath)
 }
@@ -172,6 +186,18 @@ func GetSongLyricsPath(songID string) string {
 
 func GetSongDetailAndLyricsAndPlayURLPath(songID string) string {
 	return fmt.Sprintf("%s%s?song_id=%s", apiBasePath, songDetailAndLyricsAndPlayURLPath, songID)
+}
+
+func GetPlaybackHistoryPath(limit, offset int) string {
+	return fmt.Sprintf("%s%s?limit=%d&offset=%d", apiBasePath, playbackHistoryPath, limit, offset)
+}
+
+func GetAddPlaybackHistoryPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, playbackHistoryPath)
+}
+
+func GetClearPlaybackHistoryPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, playbackHistoryPath)
 }
 
 func GetAlbumDetailAndSongListsPath(albumID string) string {

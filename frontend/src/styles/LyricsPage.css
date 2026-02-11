@@ -1,0 +1,122 @@
+.lyrics-page {
+  font-family: "SF Pro Text", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  animation: lyrics-fade-in 0.35s ease-out;
+}
+
+.lyrics-close-wrap {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.lyrics-close-btn {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+  padding: 12px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.lyrics-close-btn:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Background without blur */
+.lyrics-page-background {
+  background-size: cover;
+  background-position: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  filter: brightness(0.95);
+  transform: scale(1.02);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Warm overlay for cozy atmosphere */
+.lyrics-page-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 214, 170, 0.12), rgba(0, 0, 0, 0.18) 55%),
+    linear-gradient(135deg, rgba(40, 24, 16, 0.55), rgba(20, 12, 8, 0.65));
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Lyrics container with fade mask */
+.lyrics-container {
+  overflow: hidden;
+  position: relative;
+  -webkit-mask-image: linear-gradient(transparent, white 12%, white 88%, transparent);
+  mask-image: linear-gradient(transparent, white 12%, white 88%, transparent);
+  pointer-events: none; /* non-draggable */
+  z-index: 2;
+}
+
+.lyrics-scroll {
+  transition: transform 0.5s ease-in-out;
+}
+
+.lyric-line {
+  transition: color 0.5s ease-in-out, font-weight 0.5s ease-in-out, font-size 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  opacity: 0.7;
+}
+
+.lyric-line.lyric-active {
+  opacity: 1;
+  text-shadow: 0 6px 18px rgba(255, 184, 107, 0.28);
+}
+
+.lyric-line.lyric-idle {
+  opacity: 0.6;
+}
+
+@keyframes lyrics-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive layout tweaks */
+@media (max-width: 1200px) {
+  .lyrics-page {
+    display: flex;
+    flex-direction: column;
+  }
+  .lyrics-page-left,
+  .lyrics-page-right {
+    width: 100%;
+  }
+}
+
+@media (min-width: 1201px) {
+  .lyrics-page {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr; /* balanced proportions */
+    gap: 24px;
+  }
+  .lyrics-page-left {
+    padding: 32px;
+  }
+  .lyrics-page-right {
+    padding: 32px;
+  }
+}
