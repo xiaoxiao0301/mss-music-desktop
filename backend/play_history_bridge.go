@@ -30,7 +30,7 @@ func (b *PlayHistoryBridge) AddPlayHistory(songID string, duration int) (string,
 }
 
 func (b *PlayHistoryBridge) ClearPlayHistory() (string, error) {
-	resp, err := b.api.Delete(GetClearPlaybackHistoryPath(), nil)
+	resp, err := b.api.DeleteAuth(GetClearPlaybackHistoryPath(), nil)
 	if err != nil {
 		return "", err
 	}

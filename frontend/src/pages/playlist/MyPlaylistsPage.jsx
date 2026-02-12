@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { message, Input, Modal, Empty } from "antd";
 import { PlusOutlined, PlayCircleOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import TopNavBar from "../../components/TopNavBar";
 import {
-  GetUserPlaylists,
+  GetUserPlaylistsWithSongLists,
   CreateUserPlaylist,
-  GetUserPlaylistDetail,
-  RemoveSongFromUserPlaylist,
-  UpdateUserPlaylist
+  DeleteUserPlaylist
 } from "../../../wailsjs/go/backend/PlaylistBridge";
 import { normalizeJson } from "../../utils/helper";
 import { useMusicPlayer } from "../../context/MusicContext";
@@ -27,13 +24,13 @@ export default function MyPlaylistsPage({ onBack, pushPage }) {
   const loadPlaylists = async () => {
     try {
       setLoading(true);
-      const res = await GetUserPlaylists();
+      const res = await GetUserPlaylistsWithSongLists();
       const data = normalizeJson(res);
-      if (data.code === 20000) {
-        setPlaylists(data.data || []);
-      } else {
-        message.error("加载歌单失败");
+      if (data.code != 20000) {
+          message.error("加载歌单失败");
       }
+      console.log("load user playlist:", data.data);
+      setPlaylists(data.data || []);
     } catch (err) {
       console.error("Failed to load playlists:", err);
       message.error("加载歌单失败");
@@ -66,14 +63,30 @@ export default function MyPlaylistsPage({ onBack, pushPage }) {
     }
   };
 
-  const getPlaylistId = (playlist) =>
-    playlist?.id ?? playlist?.disstid ?? playlist?.dissid ?? playlist?.tid;
+  const handleDeletePlaylist = (playlist) => {
+    Modal.confirm({
+      title: "确认删除",
+      content: `确定要删除歌单「${playlist.name}」吗？此操作不可恢复。`,
+      okText: "删除",
+      okType: "danger",
+      cancelText: "取消",
+      async onOk() {
+        try {
+          const res = await DeleteUserPlaylist({id: playlist.id});
+          const data = normalizeJson(res);
+          if (data.code != 20000) {
+            message.error("删除失败");
+          } 
+          message.success("删除成功");
+          await loadPlaylists();
+        } catch (err) {
+          console.error("Failed to delete playlist:", err);
+          message.error("删除歌单失败");
+        }
+      }
+    });
+};
 
-  const getPlaylistName = (playlist) =>
-    playlist?.name ?? playlist?.dissname ?? playlist?.title ?? "未命名歌单";
-
-  const getPlaylistDescription = (playlist) =>
-    playlist?.description ?? playlist?.desc ?? "暂无描述";
 
   const handlePlaylistClick = (playlist) => {
     // const playlistId = getPlaylistId(playlist);
@@ -111,7 +124,7 @@ export default function MyPlaylistsPage({ onBack, pushPage }) {
         <div className="flex items-center justify-center flex-1">
           <div className="text-warm-subtext">加载中...</div>
         </div>
-      ) : playlists.length === 0 ? (
+      ) : playlists?.length === 0 ? (
         <Empty
           description="还没有歌单，创建一个吧"
           style={{ marginTop: "60px" }}
@@ -120,13 +133,12 @@ export default function MyPlaylistsPage({ onBack, pushPage }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {playlists.map((playlist) => (
             <PlaylistCard
-              key={getPlaylistId(playlist) || playlist.id}
-              playlist={playlist}
+              key={playlist.playlist.id}
+              playlist={playlist.playlist}
+              songs={playlist.songs}
               onPlaylistClick={handlePlaylistClick}
-              onLoadDetail={() => loadPlaylists()}
-              getPlaylistId={getPlaylistId}
-              getPlaylistName={getPlaylistName}
-              getPlaylistDescription={getPlaylistDescription}
+              songCount={playlist.count}
+              handleDeletePlaylist={handleDeletePlaylist}
             />
           ))}
         </div>
@@ -174,30 +186,10 @@ export default function MyPlaylistsPage({ onBack, pushPage }) {
 function PlaylistCard({
   playlist,
   onPlaylistClick,
-  onLoadDetail,
-  getPlaylistId,
-  getPlaylistName,
-  getPlaylistDescription
+  songs,
+  songCount,
+  handleDeletePlaylist
 }) {
-  const [songCount, setSongCount] = useState(0);
-
-  useEffect(() => {
-    loadPlaylistDetail();
-  }, []);
-
-  const loadPlaylistDetail = async () => {
-    const playlistId = getPlaylistId(playlist);
-    if (!playlistId) return;
-    try {
-      const res = await GetUserPlaylistDetail(playlistId);
-      const data = normalizeJson(res);
-      if (data.code === 20000) {
-        setSongCount(data.data?.songs?.length || 0);
-      }
-    } catch (err) {
-      console.error("Failed to load playlist detail:", err);
-    }
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition p-4 border border-warm-divider/40">
@@ -220,9 +212,9 @@ function PlaylistCard({
 
       {/* 信息区域 */}
       <div>
-        <h3 className="font-semibold text-gray-800 truncate">{getPlaylistName(playlist)}</h3>
+        <h3 className="font-semibold text-gray-800 truncate">{playlist.name}</h3>
         <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-          {getPlaylistDescription(playlist)}
+          {playlist.description}
         </p>
         <p className="text-xs text-gray-400 mt-2">{songCount} 首歌曲</p>
       </div>
@@ -234,6 +226,10 @@ function PlaylistCard({
           className="flex-1 py-2 px-3 bg-warm-primary text-white rounded hover:opacity-90 transition text-sm"
         >
           查看歌单
+        </button>
+
+        <button onClick={() => handleDeletePlaylist(playlist)} className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded hover:bg-red-100 transition" >
+          <DeleteOutlined />
         </button>
       </div>
     </div>

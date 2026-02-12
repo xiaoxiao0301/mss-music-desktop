@@ -32,14 +32,6 @@ func (p *PlaylistBridge) GetPlaylistCategoriesListDetail(disstid string) (string
 	return string(resp), nil
 }
 
-func (p *PlaylistBridge) GetUserPlaylists() (string, error) {
-	resp, err := p.api.Get(GetUserPlaylistsPath())
-	if err != nil {
-		return "", err
-	}
-	return string(resp), nil
-}
-
 func (p *PlaylistBridge) CreateUserPlaylist(name, description, coverURL string) (string, error) {
 	payload := map[string]any{
 		"name":        name,
@@ -53,38 +45,30 @@ func (p *PlaylistBridge) CreateUserPlaylist(name, description, coverURL string) 
 	return string(resp), nil
 }
 
-func (p *PlaylistBridge) UpdateUserPlaylist(playlistID uint, payload map[string]any) (string, error) {
-	resp, err := p.api.PatchAuth(GetUserPlaylistDetailPath(playlistID), payload)
+func (p *PlaylistBridge) GetUserPlaylistsWithSongLists() (string, error) {
+	resp, err := p.api.Get(GetUserPlaylistsPath())
 	if err != nil {
 		return "", err
 	}
 	return string(resp), nil
 }
 
-func (p *PlaylistBridge) DeleteUserPlaylist(playlistID uint) error {
-	_, err := p.api.Delete(GetUserPlaylistDetailPath(playlistID), nil)
-	return err
+func (p *PlaylistBridge) DeleteUserPlaylist(payload map[string]any) (string, error) {
+	resp, err := p.api.DeleteAuth(GetUserPlaylistsPath(), payload)
+	return string(resp), err
 }
 
-func (p *PlaylistBridge) GetUserPlaylistDetail(playlistID uint) (string, error) {
-	resp, err := p.api.Get(GetUserPlaylistDetailPath(playlistID))
+
+func (p *PlaylistBridge) AddSongToUserPlaylist(payload map[string]any) (string, error) {
+	resp, err := p.api.PostAuth(GetUserPlaylistSongPath(), payload)
 	if err != nil {
 		return "", err
 	}
 	return string(resp), nil
 }
 
-func (p *PlaylistBridge) AddSongToUserPlaylist(playlistID uint, payload map[string]any) (string, error) {
-	resp, err := p.api.PostAuth(GetUserPlaylistSongPath(playlistID), payload)
-	if err != nil {
-		return "", err
-	}
-	return string(resp), nil
-}
-
-func (p *PlaylistBridge) RemoveSongFromUserPlaylist(playlistID uint, songMid string) (string, error) {
-	payload := map[string]any{"song_mid": songMid}
-	resp, err := p.api.Delete(GetUserPlaylistSongPath(playlistID), payload)
+func (p *PlaylistBridge) RemoveSongFromUserPlaylist(payload map[string]any) (string, error) {
+	resp, err := p.api.DeleteAuth(GetUserPlaylistSongPath(), payload)
 	if err != nil {
 		return "", err
 	}

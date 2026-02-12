@@ -6,6 +6,9 @@ import { AddFavorite, RemoveFavorite, GetFavoriteArtists } from "../../../wailsj
 import { message } from "antd";
 import { fixUrl, formatConcern, getCoverUrl, getSingerCover } from "../../utils/helper";
 import { useMusicPlayer, useFavorite } from "../../context/MusicContext";
+import SlidePage from "../../components/SlidePage";
+import AlbumDetailPage from "../album/AlbumDetailPage";
+import MVDetailPage from "../mvs/MVDetailPage";
 
 export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
   const [detail, setDetail] = useState(null);
@@ -28,6 +31,10 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
 
   const { playTrackWithURL } = useMusicPlayer();
   const { isLiked, toggleLike } = useFavorite();
+
+  const [pageStack, setPageStack] = useState([{ type: "home" }]);
+  const currentPage = pageStack[pageStack.length - 1];
+  const popPage = () => setPageStack((prev) => prev.slice(0, -1));
 
   useEffect(() => {
     if (!artistMid) return;
@@ -135,7 +142,7 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
         message.error("获取歌手专辑失败");
         return;
       }
-
+      console.log(145, data.data)
       const list = data.data?.list || [];
       const total = detail?.total_album || data.data?.total || 0;
       if (currentPage === 1) {
@@ -444,6 +451,17 @@ export default function ArtistDetailPage({ artistMid, onBack, pushPage }) {
 
         </div>
       )}
+
+      {/* 专辑详情页 */}
+        <SlidePage show={currentPage.type === "albumDetail"}>
+          <AlbumDetailPage albumMid={currentPage.data} onBack={popPage} />
+        </SlidePage>
+
+        <SlidePage show={currentPage.type === "mvDetail"}>
+          <MVDetailPage
+            vid={currentPage.data} onBack={popPage}
+          />
+        </SlidePage>
     </div>
   );
 }

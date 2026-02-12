@@ -44,20 +44,21 @@ export default function LyricsPage({ currentTrack, currentTime, onClose }) {
     if (activeLineRef.current && lyricsContainerRef.current) {
       const container = lyricsContainerRef.current;
       const activeLine = activeLineRef.current;
-      
+
       const containerHeight = container.clientHeight;
       const activeLineOffsetTop = activeLine.offsetTop;
       const activeLineHeight = activeLine.clientHeight;
 
       // Center the active line
       const scrollPosition = activeLineOffsetTop - (containerHeight / 2) + (activeLineHeight / 2);
-      
+
       container.scrollTo({
         top: scrollPosition,
         behavior: 'smooth',
       });
     }
-  }, [activeLineIndex]);
+    // 依赖项加入 trackName/coverUrl，切歌或点击图片时也能滚动
+  }, [activeLineIndex, trackName, coverUrl]);
 
   return (
     <div className="lyrics-page fixed inset-0 z-40 text-white flex flex-col">

@@ -188,7 +188,7 @@ func (c *APIClient) PatchAuth(path string, body any) ([]byte, error) {
     return c.doRequest("PATCH", path, merged, RequestOptions{WithToken: true})
 }
 
-func (c *APIClient) Delete(path string, body any) ([]byte, error) {
+func (c *APIClient) DeleteAuth(path string, body any) ([]byte, error) {
     merged := map[string]any{
         "device_id": c.deviceID,
         "platform":  c.platform,

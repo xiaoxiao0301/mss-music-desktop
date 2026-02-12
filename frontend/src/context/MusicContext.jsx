@@ -8,8 +8,7 @@ import { AddPlayHistory } from "../../wailsjs/go/backend/PlayHistoryBridge";
 import {
   AddSongToUserPlaylist,
   CreateUserPlaylist,
-  GetUserPlaylistDetail,
-  GetUserPlaylists,
+  GetUserPlaylistsWithSongLists,
   RemoveSongFromUserPlaylist,
 } from "../../wailsjs/go/backend/PlaylistBridge";
 
@@ -459,7 +458,7 @@ export function MusicPlayerProvider({ children }) {
 
   const loadUserPlaylists = async () => {
     try {
-      const res = await GetUserPlaylists();
+      const res = await GetUserPlaylistsWithSongLists();
       const data = normalizeJson(res);
       if (data.code !== 20000) {
         return;
@@ -470,25 +469,7 @@ export function MusicPlayerProvider({ children }) {
     }
   };
 
-  const loadUserPlaylistDetail = async (playlistID) => {
-    if (!playlistID) return;
-    setPlaylistLoading(true);
-    try {
-      const res = await GetUserPlaylistDetail(playlistID);
-      const data = normalizeJson(res);
-      if (data.code !== 20000) {
-        return;
-      }
-      setPlaylistSongs((prev) => ({
-        ...prev,
-        [playlistID]: data.data?.songs || [],
-      }));
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setPlaylistLoading(false);
-    }
-  };
+
 
   const openPlaylistPicker = (song) => {
     console.log('click', song)
@@ -516,7 +497,8 @@ export function MusicPlayerProvider({ children }) {
   const addSongToUserPlaylist = async (playlistID, song) => {
     if (!playlistID || !song) return;
     try {
-      await AddSongToUserPlaylist(playlistID, {
+      await AddSongToUserPlaylist({
+        id: playlistID,
         song_mid: song.mid,
         song_name: song.name,
         song_artist: song.artist,
@@ -524,7 +506,6 @@ export function MusicPlayerProvider({ children }) {
         song_cover: song.cover,
         duration: song.duration || 0,
       });
-      await loadUserPlaylistDetail(playlistID);
       message.success("已添加到歌单");
     } catch (err) {
       console.log(err);
@@ -535,8 +516,10 @@ export function MusicPlayerProvider({ children }) {
   const removeSongFromUserPlaylist = async (playlistID, songMid) => {
     if (!playlistID || !songMid) return;
     try {
-      await RemoveSongFromUserPlaylist(playlistID, songMid);
-      await loadUserPlaylistDetail(playlistID);
+      await RemoveSongFromUserPlaylist({
+        playlistID: playlistID,
+        song_mid: songMid,
+      });
       message.success("已移除");
     } catch (err) {
       console.log(err);
@@ -767,7 +750,6 @@ export function MusicPlayerProvider({ children }) {
         playlistPickerSong,
         playlistLoading,
         loadUserPlaylists,
-        loadUserPlaylistDetail,
         openPlaylistPicker,
         closePlaylistPicker,
         createUserPlaylist,

@@ -113,6 +113,7 @@ function Sidebar({ currentPage, switchRootPage }) {
       <div className="flex-1 overflow-auto pr-1">
         <SectionTitle collapsed={collapsed}>音乐馆</SectionTitle>
         <NavItem label="推荐" active={currentPage === "home"} collapsed={collapsed} onClick={() => switchRootPage("home")} />
+        <NavItem label="搜索" active={currentPage === "search"} collapsed={collapsed} onClick={() => switchRootPage("search")} />
         <NavItem label="歌单" active={currentPage === "playlist"} collapsed={collapsed} onClick={() => switchRootPage("playlistCategory")} />
         <NavItem label="歌手" active={currentPage === "artist"} collapsed={collapsed} onClick={() => switchRootPage("artist")} />
         <NavItem label="排行榜" active={currentPage === "rank"} collapsed={collapsed} onClick={() => switchRootPage("rank")} />

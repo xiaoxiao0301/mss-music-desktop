@@ -560,13 +560,13 @@ function DesktopPlayerBar() {
             )}
             {!playlistLoading && userPlaylists.map((playlist) => (
               <button
-                key={playlist.id}
+                key={playlist.playlist.id}
                 className="w-full text-left px-3 py-2 rounded-lg hover:bg-amber-800/40 transition flex items-center justify-between"
-                onClick={() => handleAddSongToPlaylist(playlist.id)}
+                onClick={() => handleAddSongToPlaylist(playlist.playlist.id)}
               >
                 <div className="min-w-0">
-                  <div className="text-amber-100 text-sm truncate">{playlist.name}</div>
-                  <div className="text-amber-300/70 text-xs truncate">{playlist.description || "暂无描述"}</div>
+                  <div className="text-amber-100 text-sm truncate">{playlist.playlist.name}</div>
+                  <div className="text-amber-300/70 text-xs truncate">{playlist.playlist.description}</div>
                 </div>
                 <div className="text-amber-200 text-xs">添加</div>
               </button>

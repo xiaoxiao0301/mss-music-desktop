@@ -35,7 +35,7 @@ func (f *FavoriteBridge) RemoveFavorite(targetID, targetType string) error {
 		TargetID:   targetID,
 		TargetType: targetType,
 	}
-	_, err := f.apiClient.Delete(GetRemoveFavoritePath(), req)
+	_, err := f.apiClient.DeleteAuth(GetRemoveFavoritePath(), req)
 	return err
 }
 

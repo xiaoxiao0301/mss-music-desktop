@@ -134,7 +134,7 @@ export default function PlaylistDetailPage({ playlistId, initialData, onBack, pu
         songs={normalizedSongs}
         onPlay={(song) => playTrackWithURL(song)}
         onLike={(song) => toggleLike(song)}
-        likedChecker={(id) => isLiked(id)}
+        likedChecker={(mid) => isLiked(mid)}
         onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
         onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
       />

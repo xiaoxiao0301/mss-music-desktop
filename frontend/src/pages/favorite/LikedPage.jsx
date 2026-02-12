@@ -75,17 +75,19 @@ export default function LikedPage({ pushPage }) {
       )}
 
       {!loading && songs.length > 0 && (
-        <SongListDesktop
-          songs={songs}
-          onPlay={(song) => playTrackWithURL(song)}
-          onLike={(song) => {
-            toggleLike(song);
-            setSongs(songs.filter(s => s.mid !== song.mid));
-          }}
-          likedChecker={() => true}
-          onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
-          onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
-        />
+        <div className="bg-white rounded-lg shadow p-4">
+          <SongListDesktop
+            songs={songs}
+            onPlay={(song) => playTrackWithURL(song)}
+            onLike={(song) => {
+              toggleLike(song);
+              setSongs(songs.filter(s => s.mid !== song.mid));
+            }}
+            likedChecker={() => true}
+            onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+            onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
+          />
+        </div>  
       )}
     </div>
   );

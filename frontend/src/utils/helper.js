@@ -109,3 +109,8 @@ export function getCoverUrl(albumID, size = 300) {
 export function getSingerCover(singerMid) {
   return `https://y.qq.com/music/photo_new/T001R300x300M000${singerMid}.jpg`
 }
+
+export function truncateText(text, maxLength = 10) {
+  if (!text) return "";
+  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+}

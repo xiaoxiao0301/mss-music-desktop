@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { message } from "antd";
 import { useFavorite, useMusicPlayer } from "../../context/MusicContext";
-import TopNavBar from "../../components/TopNavBar";
 import { GetPlayHistory, ClearPlayHistory } from "../../../wailsjs/go/backend/PlayHistoryBridge";
 import { GetSongDetail } from "../../../wailsjs/go/backend/SongBridge";
 import { getCoverUrl, normalizeJson } from "../../utils/helper";
+import SongListDesktop from "../../components/SongList";
 
 export default function RecentPlaysPage() {
   const { toggleLike, isLiked } = useFavorite();
@@ -77,8 +77,23 @@ export default function RecentPlaysPage() {
     }
   };
 
+  const normalizedSongs = useMemo(() => {
+      if (!recent || !recent.length) return [];
+  
+      return recent.map((song) => ({
+        id: song.id,
+        mid: song.mid,
+        name: song.name,
+        artist: song.artist,
+        albumname: song.albumname,
+        albummid: song.albummid,
+        duration: song.duration,
+        cover: song.cover,
+      }));
+    }, [recent]);
+
   return (
-    <div className="p-6">
+    <div className="p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="text-lg font-bold">最近播放（{recent.length}）</div>
         <div className="flex gap-2">
@@ -86,33 +101,22 @@ export default function RecentPlaysPage() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card flex-1 overflow-y-auto">
         {loading && <div className="p-6 text-center text-warm-subtext">加载中...</div>}
         {!loading && recent.length === 0 && <div className="p-6 text-center text-warm-subtext">暂无播放记录</div>}
-        {!loading && recent.map((item, index) => (
-          <div key={`${item.mid}-${item.playedAt || index}`} className="list-item flex items-center justify-between">
-            <div className="flex items-center gap-4 cursor-pointer" onClick={() => playTrackWithURL(item)}>
-              <img src={item.cover} alt="" className="w-12 h-12 rounded object-cover" />
-              <div>
-                <div className="font-bold">{item.name}</div>
-                <div className="text-sm text-warm-subtext">{item.artist}</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-warm-subtext">最近播放</div>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleLike(item);
-                }} 
-                className={`text-xl ${isLiked(item.id) ? "text-red-500" : "text-gray-400"}`}
-              >
-                {isLiked(item.id) ? "❤️" : "🤍"}
-              </button>
-            </div>
-          </div>
-        ))}
+        {!loading && recent.length > 0 && (
+          <>
+            <SongListDesktop
+              songs={normalizedSongs}
+              onPlay={(song) => playTrackWithURL(song)}
+              onLike={(song) => toggleLike(song)}
+              likedChecker={(id) => isLiked(id)}
+              onSongClick={(song) => pushPage?.({ type: "songDetail", songMid: song.mid })}
+              onAlbumClick={(song) => pushPage?.({ type: "albumDetail", albumMid: song.albummid })}
+            />
+          </>
+        )
+      }   
       </div>
     </div>
   );

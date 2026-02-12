@@ -1,6 +1,9 @@
 package backend
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 const (
 	apiBasePath = "/api"
@@ -30,7 +33,9 @@ const (
 	systemPlaylistCategoriesPath = "/playlist/types"
 	systemPlaylistCategoriesListPath = "/playlist/category/list"
 	systemPlaylistCategoriesListDetailPath = "/playlist/category/detail"
+
 	userPlaylistPath = "/playlist/user/list"
+	userPlaylistSongPath = "/playlist/user/song"
 
 	radioCategoriesPath = "/radio/categories"
 	radioCategoryListPath = "/radio/detail"
@@ -48,6 +53,9 @@ const (
 	songLyricsPath = "/song/lyrics"
 	songDetailAndLyricsAndPlayURLPath = "/song/detail-lyrics-playurl"
 	playbackHistoryPath = "/recent/history"
+
+	searchPath = "/search"
+	searchHotKeyPath = "/search/hotkey"
 
 	favoritePath = "/favorites"
 )
@@ -116,12 +124,8 @@ func GetUserPlaylistsPath() string {
 	return fmt.Sprintf("%s%s", apiBasePath, userPlaylistPath)
 }
 
-func GetUserPlaylistDetailPath(playlistID uint) string {
-	return fmt.Sprintf("%s%s/%d", apiBasePath, userPlaylistPath, playlistID)
-}
-
-func GetUserPlaylistSongPath(playlistID uint) string {
-	return fmt.Sprintf("%s%s/%d/song", apiBasePath, userPlaylistPath, playlistID)
+func GetUserPlaylistSongPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, userPlaylistSongPath)
 }
 
 func GetRadioCategoriesPath() string {
@@ -218,4 +222,13 @@ func GetRemoveFavoritePath() string {
 
 func GetFavoritesPath(targetType string) string {
 	return fmt.Sprintf("%s%s?target_type=%s", apiBasePath, favoritePath, targetType)
+}
+
+func GetSearchPath(keyword string, searchType, page, size int) string {
+	escaped := url.QueryEscape(keyword)
+	return fmt.Sprintf("%s%s?keyword=%s&type=%d&page=%d&size=%d", apiBasePath, searchPath, escaped, searchType, page, size)
+}
+
+func GetSearchHotKeyPath() string {
+	return fmt.Sprintf("%s%s", apiBasePath, searchHotKeyPath)
 }

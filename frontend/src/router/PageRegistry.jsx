@@ -17,6 +17,7 @@ import LikedPage from "../pages/favorite/LikedPage";
 import FavoriteAlbumsPage from "../pages/favorite/FavoriteAlbumsPage";
 import FavoritePlaylistsPage from "../pages/favorite/FavoritePlaylistsPage";
 import FavoriteArtistsPage from "../pages/favorite/FavoriteArtistsPage";
+import SearchPage from "../pages/search/SearchPage";
 
 export const PageRegistry = {
   home: DiscoverPage,
@@ -38,4 +39,5 @@ export const PageRegistry = {
   "fav-album": FavoriteAlbumsPage,
   "fav-playlist": FavoritePlaylistsPage,
   "fav-artist": FavoriteArtistsPage,
+  search: SearchPage,
 };
